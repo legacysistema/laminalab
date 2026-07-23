@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerador de Lâminas — Fotolivro · Nicephotos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-900:#15171b;
+    --ink-800:#1d2026;
+    --ink-750:#22262d;
+    --ink-700:#31363f;
+    --ink-600:#454b56;
+    --bench:#b7b4aa;
+    --paper:#ffffff;
+    --text-hi:#eeece6;
+    --text-lo:#98958d;
+    --rose:#d0847e;
+    --rose-strong:#d97871;
+    --teal:#159489;
+    --teal-strong:#1bb0a3;
+    --red:#d1483a;
+    --mono:'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    --sans:'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink-900);
+    color:var(--text-hi);
+    font-family:var(--sans);
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  button, input, select{font-family:inherit;}
+  button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, .lamina-card:focus-visible{
+    outline:2px solid var(--teal-strong);
+    outline-offset:2px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition-duration:0.01ms !important; animation-duration:0.01ms !important;}
+  }
+
+  .app{max-width:1180px;margin:0 auto;padding:28px 20px 60px;}
+
+  /* ---------- header ---------- */
+  .app-header{padding:6px 4px 26px;border-bottom:1px solid var(--ink-700);margin-bottom:22px;}
+  .header-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px;}
+  .header-left{flex:1;}
+  .header-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--teal-strong);
+    text-transform:uppercase;margin:0 0 10px;
+  }
+  .app-header h1{
+    font-family:var(--mono);font-weight:600;font-size:clamp(28px,4vw,42px);
+    margin:0 0 10px;letter-spacing:-0.01em;
+  }
+  .tagline{color:var(--text-lo);max-width:60ch;margin:0;font-size:14.5px;}
+
+  .btn-project{background:var(--ink-800);border:1px solid var(--ink-600);color:var(--text-hi);padding:8px 14px;border-radius:6px;font-family:var(--mono);font-size:12px;cursor:pointer;}
+  .btn-project:hover{border-color:var(--teal-strong);color:var(--teal-strong);}
+  .btn-project.import{position:relative;}
+  .btn-project.import input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+
+  /* ---------- tabs ---------- */
+  .tabs{display:flex;gap:6px;margin-bottom:0;padding-left:4px;}
+  .tab-btn{
+    font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.03em;
+    background:var(--ink-800);color:var(--text-lo);border:1px solid var(--ink-700);
+    border-bottom:none;border-radius:7px 7px 0 0;padding:10px 20px;cursor:pointer;
+    position:relative;top:1px;
+  }
+  .tab-btn.active{background:var(--ink-750);color:var(--text-hi);border-color:var(--ink-600);}
+  .tab-btn:not(.active):hover{color:var(--text-hi);}
+
+  /* ---------- workspace ---------- */
+  .workspace{
+    display:flex;gap:0;background:var(--ink-750);border:1px solid var(--ink-600);
+    border-radius:0 10px 10px 10px;overflow:hidden;
+  }
+  @media (max-width:860px){ .workspace{flex-direction:column;} }
+
+  .sidebar{
+    width:296px;flex:0 0 296px;padding:22px;border-right:1px solid var(--ink-700);
+    display:flex;flex-direction:column;gap:18px;max-height:none;
+  }
+  @media (max-width:860px){ .sidebar{width:auto;flex:none;border-right:none;border-bottom:1px solid var(--ink-700);} }
+
+  .control-group{display:flex;flex-direction:column;gap:8px;}
+  .control-group > label, .control-group > .label{
+    font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-lo);
+  }
+
+  .upload-zone{
+    border:1.5px dashed var(--ink-600);border-radius:8px;padding:18px 12px;text-align:center;
+    color:var(--text-lo);font-size:13px;cursor:pointer;background:var(--ink-800);
+  }
+  .upload-zone:hover{border-color:var(--teal);color:var(--text-hi);}
+  .upload-zone.dragover{border-color:var(--teal-strong);background:rgba(21,148,137,0.12);color:var(--text-hi);}
+  .upload-zone.small{padding:12px 10px;font-size:12px;}
+  .upload-zone .icon{display:block;font-size:20px;margin-bottom:4px;opacity:.8;}
+  .upload-zone .fname{display:block;margin-top:4px;font-size:11px;color:var(--teal-strong);word-break:break-all;}
+
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;
+    background:var(--ink-600);outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:15px;height:15px;border-radius:50%;
+    background:var(--teal-strong);cursor:pointer;border:2px solid var(--ink-900);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:15px;height:15px;border-radius:50%;background:var(--teal-strong);cursor:pointer;border:2px solid var(--ink-900);
+  }
+  .zoom-row{display:flex;justify-content:space-between;align-items:baseline;}
+  .zoom-row .val{font-family:var(--mono);font-size:12px;color:var(--text-hi);}
+
+  .dpi-indicator{font-family:var(--mono);font-size:11.5px;display:flex;align-items:center;gap:6px;color:var(--text-lo);min-height:16px;}
+  .dpi-indicator .dpi-dot{width:7px;height:7px;border-radius:50%;background:var(--ink-600);flex:0 0 auto;}
+  .dpi-indicator.dpi-good .dpi-dot{background:var(--teal-strong);}
+  .dpi-indicator.dpi-good{color:var(--teal-strong);}
+  .dpi-indicator.dpi-ok .dpi-dot{background:#d9b23c;}
+  .dpi-indicator.dpi-ok{color:#d9b23c;}
+  .dpi-indicator.dpi-low .dpi-dot{background:var(--red);}
+  .dpi-indicator.dpi-low{color:var(--red);}
+
+  .checkbox-label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-hi);cursor:pointer;}
+  .checkbox-label input{width:15px;height:15px;accent-color:var(--teal-strong);}
+
+  .btn-export, .btn-secondary, .btn-ghost, .btn-preview{
+    font-family:var(--mono);font-size:12.5px;font-weight:600;letter-spacing:.02em;
+    border-radius:6px;padding:11px 14px;cursor:pointer;text-align:center;border:1px solid transparent;
+  }
+  .btn-export{background:var(--teal);color:#08201d;}
+  .btn-export:hover{background:var(--teal-strong);}
+  .btn-export:disabled{background:var(--ink-700);color:var(--text-lo);cursor:not-allowed;}
+  .btn-secondary{background:transparent;border-color:var(--ink-600);color:var(--text-hi);}
+  .btn-secondary:hover{border-color:var(--teal-strong);color:var(--teal-strong);}
+  .btn-secondary:disabled{color:var(--text-lo);cursor:not-allowed;border-color:var(--ink-700);}
+  .btn-ghost{background:transparent;border-color:var(--ink-700);color:var(--text-lo);font-size:11.5px;padding:9px 12px;}
+  .btn-ghost:hover{color:var(--text-hi);border-color:var(--ink-600);}
+  .btn-preview{background:var(--ink-800);border-color:var(--ink-600);color:var(--text-hi);}
+  .btn-preview:hover{border-color:var(--teal-strong);color:var(--teal-strong);}
+
+  .hint{font-size:11.5px;color:var(--text-lo);margin:0;font-family:var(--mono);}
+  .microhint{font-size:11px;color:var(--text-lo);margin:0;}
+
+  .segmented{display:flex;border:1px solid var(--ink-600);border-radius:7px;overflow:hidden;}
+  .segmented button{
+    flex:1;background:var(--ink-800);color:var(--text-lo);border:none;padding:9px 6px;
+    font-family:var(--mono);font-size:11.5px;cursor:pointer;border-right:1px solid var(--ink-600);
+  }
+  .segmented button:last-child{border-right:none;}
+  .segmented button.active{background:var(--teal);color:#08201d;}
+
+  .lamina-list{display:flex;flex-wrap:wrap;gap:7px;}
+  .lamina-card{
+    display:flex;align-items:center;gap:6px;background:var(--ink-800);border:1px solid var(--ink-600);
+    border-radius:6px;padding:6px 8px;cursor:pointer;font-family:var(--mono);font-size:12px;color:var(--text-lo);
+  }
+  .lamina-card.active{border-color:var(--teal-strong);color:var(--text-hi);background:rgba(21,148,137,0.12);}
+  .lamina-card .lamina-status{font-size:10px;opacity:.85;}
+  .lamina-card .lamina-remove{
+    background:none;border:none;color:var(--text-lo);cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 4px;
+  }
+  .lamina-card .lamina-remove:hover{color:var(--red);}
+
+  /* ---------- posicionamento ---------- */
+  .position-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .position-card{
+    display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--ink-800);
+    border:1px solid var(--ink-600);border-radius:8px;padding:10px 8px 9px;cursor:pointer;
+  }
+  .position-card:hover{border-color:var(--teal);}
+  .position-card:hover .position-preview i{opacity:.85;}
+  .position-card.active{border-color:var(--teal-strong);background:rgba(21,148,137,0.12);}
+  .position-preview{
+    display:grid;gap:3px;width:100%;aspect-ratio:276/200;background:var(--ink-900);
+    border-radius:4px;padding:5px;
+  }
+  .position-preview i{background:var(--bench);border-radius:1.5px;display:block;opacity:.6;}
+  .position-card.active .position-preview i{opacity:1;}
+  .position-preview.p1{grid-template-columns:1fr;}
+  .position-preview.p2{grid-template-columns:1fr 1fr;}
+  .position-preview.p2-stack{position:relative;}
+  .position-preview.p2-stack i{position:absolute;width:58%;height:58%;border:2px solid var(--ink-900);}
+  .position-preview.p2-stack i:nth-child(1){top:0;right:0;}
+  .position-preview.p2-stack i:nth-child(2){bottom:0;left:0;}
+  .position-preview.p2-feature{grid-template-columns:1fr;grid-template-rows:2fr 1fr;}
+  .position-preview.p4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;}
+  .position-preview.p6{grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr;}
+  .position-label{font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;color:var(--text-lo);}
+  .position-card.active .position-label{color:var(--text-hi);}
+
+  /* ---------- modais ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(21,23,27,.72);display:none;
+    align-items:center;justify-content:center;padding:20px;z-index:100;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    width:100%;max-width:560px;max-height:86vh;display:flex;flex-direction:column;
+    background:var(--ink-750);border:1px solid var(--ink-600);border-radius:10px;
+    box-shadow:0 24px 60px -14px rgba(0,0,0,.65);
+  }
+  .modal-header{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:16px 20px;border-bottom:1px solid var(--ink-700);
+  }
+  .modal-header h3{margin:0;font-family:var(--mono);font-size:14.5px;font-weight:600;color:var(--text-hi);letter-spacing:.01em;}
+  .modal-close{background:none;border:none;color:var(--text-lo);font-size:22px;line-height:1;cursor:pointer;padding:2px 4px;}
+  .modal-close:hover{color:var(--text-hi);}
+  .modal-body{padding:18px 20px;overflow-y:auto;}
+  .modal-hint{margin:0 0 14px;}
+  .modal-photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .modal-photo-grid.count-1{grid-template-columns:1fr;}
+  .modal-photo-grid.count-6{grid-template-columns:1fr 1fr 1fr;}
+  .modal-photo-slot{
+    position:relative;aspect-ratio:4/3;border:1.5px dashed var(--ink-600);border-radius:8px;
+    background:var(--ink-800);color:var(--text-lo);cursor:pointer;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;
+  }
+  .modal-photo-slot:hover{border-color:var(--teal);color:var(--text-hi);}
+  .modal-photo-slot.dragover{border-color:var(--teal-strong);background:rgba(21,148,137,.12);}
+  .modal-photo-slot.filled{border-style:solid;border-color:var(--teal);}
+  .modal-photo-slot .slot-icon{font-size:18px;opacity:.8;}
+  .modal-photo-slot img{width:100%;height:100%;object-fit:cover;display:block;}
+  .modal-photo-slot .slot-label{
+    position:absolute;top:6px;left:6px;background:rgba(21,23,27,.82);color:var(--text-hi);
+    font-family:var(--mono);font-size:10.5px;padding:2px 6px;border-radius:4px;
+  }
+  .photo-slot-wrap{display:flex;flex-direction:column;gap:6px;}
+  .modal-photo-slot.fit-contain img{object-fit:contain;background:var(--ink-900);}
+  .fit-toggle{font-size:11px;line-height:1.3;color:var(--text-lo);gap:6px;}
+  .fit-toggle input{width:13px;height:13px;flex:0 0 auto;margin-top:1px;}
+  .fit-toggle:hover{color:var(--text-hi);}
+  .modal-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 20px;border-top:1px solid var(--ink-700);}
+
+  /* ---------- modal de preview ---------- */
+  .preview-modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;
+    align-items:center;justify-content:center;padding:20px;z-index:200;
+    cursor:pointer;
+  }
+  .preview-modal-overlay.open{display:flex;}
+  .preview-modal-overlay .preview-close{
+    position:absolute;top:20px;right:30px;font-size:36px;color:#fff;background:none;border:none;cursor:pointer;z-index:210;
+    font-family:var(--mono);
+  }
+  .preview-modal-overlay .preview-close:hover{color:var(--teal-strong);}
+  .preview-modal-overlay img{
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+    box-shadow:0 0 40px rgba(0,0,0,.7);
+    border-radius:4px;
+    background:#fff;
+    cursor:default;
+  }
+
+  /* ---------- importação ---------- */
+  .import-steps{display:flex;gap:4px;margin:0 0 16px;}
+  .import-step{
+    flex:1;display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;
+    letter-spacing:.02em;color:var(--text-lo);padding-bottom:10px;border-bottom:2px solid var(--ink-600);
+  }
+  .import-step-num{
+    width:18px;height:18px;border-radius:50%;flex:0 0 auto;background:var(--ink-800);
+    border:1px solid var(--ink-600);display:flex;align-items:center;justify-content:center;
+    font-size:10.5px;color:var(--text-lo);
+  }
+  .import-step.active{color:var(--text-hi);border-color:var(--teal-strong);}
+  .import-step.active .import-step-num{background:var(--teal);border-color:var(--teal);color:#08201d;}
+  .import-step.done .import-step-num{background:var(--teal-strong);border-color:var(--teal-strong);color:#08201d;}
+  .import-step.done{color:var(--text-hi);}
+  .import-summary{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+  .import-summary-row{
+    display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    padding:9px 12px;background:var(--ink-800);border:1px solid var(--ink-700);border-radius:6px;
+  }
+  .import-summary-row .label{font-size:12.5px;color:var(--text-lo);}
+  .import-summary-row .value{font-family:var(--mono);font-size:13px;color:var(--text-hi);font-weight:600;text-align:right;}
+  .import-notfound label{
+    font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--text-lo);display:block;margin-bottom:8px;
+  }
+  .import-notfound-list{
+    list-style:none;margin:0;padding:0;max-height:150px;overflow-y:auto;
+    display:flex;flex-direction:column;gap:5px;
+  }
+  .import-notfound-list li{
+    font-family:var(--mono);font-size:12px;color:var(--rose-strong);background:var(--ink-800);
+    border:1px solid var(--ink-700);border-radius:5px;padding:6px 9px;
+  }
+  /* nova área para fundos na importação */
+  .bg-upload-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
+  .bg-upload-row .upload-zone{flex:1;min-width:140px;}
+
+  /* ---------- progress grid ---------- */
+  .import-progress-grid{
+    margin-top:16px;
+    border-top:1px solid var(--ink-700);
+    padding-top:12px;
+    display:none;
+  }
+  .import-progress-grid.active{
+    display:block;
+  }
+  .import-progress-grid .progress-header{
+    display:flex;
+    justify-content:space-between;
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-lo);
+    margin-bottom:8px;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+  }
+  .progress-items{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    max-height:180px;
+    overflow-y:auto;
+    background:var(--ink-800);
+    border:1px solid var(--ink-700);
+    border-radius:6px;
+    padding:6px 8px;
+  }
+  .progress-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    padding:3px 4px;
+    border-radius:4px;
+  }
+  .progress-item .p-status{
+    width:16px;
+    height:16px;
+    flex:0 0 16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+  }
+  .progress-item .p-name{
+    flex:1;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    color:var(--text-lo);
+  }
+  .progress-item.done .p-name{color:var(--text-hi);}
+  .progress-item.error .p-name{color:var(--red);}
+  .progress-item.loading .p-name{color:var(--teal-strong);}
+  .progress-item .p-status.loading{animation: spin 0.8s linear infinite; border:2px solid var(--ink-600); border-top-color:var(--teal-strong); border-radius:50%; width:14px; height:14px;}
+  .progress-item .p-status.done{color:var(--teal-strong);}
+  .progress-item .p-status.error{color:var(--red);}
+
+  /* ---------- canvas ---------- */
+  .canvas-area{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:34px 24px;gap:16px;background:
+    repeating-linear-gradient(45deg, var(--ink-750) 0 12px, #24282f 12px 24px);
+  }
+  .canvas-frame{padding:28px 0 0 40px;max-width:100%;}
+  .canvas-wrapper{position:relative;display:inline-block;max-width:100%;box-shadow:0 18px 40px -14px rgba(0,0,0,.6);}
+  #editCanvas{
+    display:block;background:var(--bench);max-width:100%;max-height:56vh;width:auto;height:auto;
+    touch-action:none;cursor:grab;
+  }
+  #editCanvas:active{cursor:grabbing;}
+
+  .guides{position:absolute;inset:0;pointer-events:none;}
+  .bleed-strip{position:absolute;background:rgba(208,132,126,.4);}
+  #capaStripTop{top:0;left:0;right:0;}
+  #capaStripBottom{bottom:0;left:0;right:0;}
+  #capaStripLeft{top:0;bottom:0;left:0;}
+  #capaStripRight{top:0;bottom:0;right:0;}
+  .safe-frame{position:absolute;border:1.5px dashed rgba(217,120,113,.95);}
+  .gutter-zone{position:absolute;top:0;bottom:0;background:rgba(208,132,126,.4);}
+  .margin-frame{position:absolute;border:1.5px dashed rgba(21,148,137,.9);}
+  .page-split{position:absolute;top:0;bottom:0;left:50%;border-left:1.5px dashed rgba(255,255,255,.6);}
+
+  .crop-mark{position:absolute;width:13px;height:13px;border-color:var(--rose-strong);pointer-events:none;}
+  .crop-mark.tl{top:-13px;left:-13px;border-top:1.5px solid;border-left:1.5px solid;}
+  .crop-mark.tr{top:-13px;right:-13px;border-top:1.5px solid;border-right:1.5px solid;}
+  .crop-mark.bl{bottom:-13px;left:-13px;border-bottom:1.5px solid;border-left:1.5px solid;}
+  .crop-mark.br{bottom:-13px;right:-13px;border-bottom:1.5px solid;border-right:1.5px solid;}
+
+  .empty-state{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:6px;color:#5b5850;cursor:pointer;text-align:center;padding:12px;
+  }
+  .empty-state .icon{font-size:26px;opacity:.7;}
+  .empty-state p{margin:0;font-size:12.5px;font-family:var(--mono);}
+
+  .ruler-h{position:absolute;top:-24px;left:0;right:0;height:20px;}
+  .ruler-v{position:absolute;left:-38px;top:0;bottom:0;width:30px;}
+  .ruler-tick{position:absolute;color:var(--text-lo);font-family:var(--mono);font-size:9px;}
+  .ruler-h .ruler-tick{top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .ruler-h .ruler-tick i{width:1px;height:6px;background:var(--ink-600);display:block;}
+  .ruler-v .ruler-tick{left:0;width:100%;transform:translateY(-50%);display:flex;align-items:center;gap:3px;justify-content:flex-end;}
+  .ruler-v .ruler-tick i{width:6px;height:1px;background:var(--ink-600);display:block;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;}
+  .legend-item{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text-lo);font-family:var(--mono);}
+  .dot{width:10px;height:10px;border-radius:2px;display:inline-block;flex:0 0 auto;}
+  .dot.rose{background:rgba(208,132,126,.85);}
+  .dot.teal-line{background:none;border:1.5px dashed var(--teal-strong);}
+
+  /* ---------- settings ---------- */
+  .settings-panel{margin-top:18px;background:var(--ink-800);border:1px solid var(--ink-700);border-radius:9px;}
+  .settings-panel summary{
+    cursor:pointer;padding:14px 18px;font-family:var(--mono);font-size:12.5px;color:var(--text-hi);
+    letter-spacing:.03em;list-style:none;display:flex;align-items:center;gap:8px;
+  }
+  .settings-panel summary::-webkit-details-marker{display:none;}
+  .settings-panel summary::before{content:'▸';color:var(--teal-strong);font-size:10px;}
+  .settings-panel[open] summary::before{content:'▾';}
+  .settings-body{padding:2px 18px 18px;}
+  .settings-section h4{
+    font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--text-lo);margin:14px 0 10px;
+  }
+  .settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+  .settings-grid label{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--text-lo);}
+  .settings-grid input{
+    background:var(--ink-900);border:1px solid var(--ink-600);border-radius:5px;color:var(--text-hi);
+    padding:7px 9px;font-family:var(--mono);font-size:12.5px;width:100%;
+  }
+  .settings-grid input:focus-visible{outline:2px solid var(--teal-strong);}
+  .settings-selector{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px;}
+  .settings-selector label{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-lo);}
+  .settings-selector select{
+    background:var(--ink-900);border:1px solid var(--ink-600);border-radius:5px;color:var(--text-hi);
+    padding:7px 12px;font-family:var(--mono);font-size:13px;cursor:pointer;flex:1;min-width:160px;
+  }
+  .settings-selector select:focus-visible{outline:2px solid var(--teal-strong);}
+
+  .app-footer{margin-top:22px;padding:0 4px;color:var(--text-lo);font-size:12px;max-width:74ch;}
+  .app-footer a{color:var(--teal-strong);}
+
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translate(-50%,12px);background:var(--ink-750);
+    border:1px solid var(--teal-strong);color:var(--text-hi);padding:10px 18px;border-radius:7px;
+    font-family:var(--mono);font-size:12.5px;opacity:0;transition:opacity .25s ease, transform .25s ease;
+    pointer-events:none;z-index:50;box-shadow:0 10px 24px -8px rgba(0,0,0,.5);
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0);}
+
+  /* indicador de progresso na importação */
+  .import-status{
+    margin-top:10px;
+    padding:8px 12px;
+    border-radius:6px;
+    background:var(--ink-800);
+    border:1px solid var(--ink-700);
+    color:var(--text-lo);
+    font-family:var(--mono);
+    font-size:12px;
+    display:none;
+  }
+  .import-status.active{
+    display:block;
+    border-color:var(--teal-strong);
+    color:var(--text-hi);
+  }
+  .import-status.error{
+    border-color:var(--red);
+    color:var(--red);
+  }
+  .spinner{
+    display:inline-block;
+    width:14px;
+    height:14px;
+    border:2px solid var(--ink-600);
+    border-top-color:var(--teal-strong);
+    border-radius:50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align:middle;
+    margin-right:8px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="app-header">
+    <div class="header-row">
+      <div class="header-left">
+        <p class="eyebrow">Fotolivro · Rodrigo Costa</p>
+        <h1>Gerador de Lâminas</h1>
+        <p class="tagline">Posicione suas fotos dentro das áreas de sangria, margem de segurança e acabamento do miolo do gabarito, e exporte os JPGs já prontos para o upload.</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn-project" id="exportProjectBtn">💾 Exportar projeto</button>
+        <button class="btn-project import" id="importProjectBtn">📂 Importar projeto
+          <input type="file" id="importProjectInput" accept=".json,application/json">
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="capa" role="tab" aria-selected="true">Capa</button>
+    <button class="tab-btn" data-tab="laminas" role="tab" aria-selected="false">Lâminas</button>
+  </nav>
+
+  <main class="workspace">
+
+    <!-- CAPA SIDEBAR -->
+    <aside class="sidebar" id="capaSidebar">
+      <div class="control-group">
+        <label>Foto da capa</label>
+        <div class="upload-zone" id="capaUploadZone" tabindex="0" role="button" aria-label="Enviar foto da capa">
+          <input type="file" id="capaFileInput" accept="image/*" hidden>
+          <span class="icon">📷</span>
+          <span>Clique ou arraste uma foto</span>
+          <span class="fname" id="capaFname"></span>
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="zoom-row"><label style="margin:0">Zoom</label><span class="val" id="capaZoomVal">100%</span></div>
+        <input type="range" id="capaZoomSlider" min="1" max="3" step="0.01" value="1">
+        <div class="dpi-indicator" id="capaDpiIndicator"></div>
+      </div>
+      <div class="control-group">
+        <label class="checkbox-label"><input type="checkbox" id="capaGuidesToggle" checked> Mostrar guias</label>
+      </div>
+      <div class="control-group">
+        <button class="btn-export" id="capaExportBtn" disabled>⬇ Baixar capa.jpg</button>
+        <button class="btn-preview" id="capaPreviewBtn" disabled>👁️ Visualizar página</button>
+        <p class="hint" id="capaHint">340 × 250 mm · sangria 20 mm</p>
+        <p class="microhint">Nos fotolivros tradicionais a contracapa e a lombada não são personalizáveis — este arquivo é só a capa frontal.</p>
+      </div>
+    </aside>
+
+    <!-- LAMINAS SIDEBAR -->
+    <aside class="sidebar" id="laminasSidebar" style="display:none">
+      <div class="control-group">
+        <label>Lâminas</label>
+        <div class="lamina-list" id="laminaList"></div>
+        <button class="btn-secondary" id="addLaminaBtn" type="button">+ Nova lâmina</button>
+      </div>
+
+      <div class="control-group">
+        <label>Importar Legacy Álbuns</label>
+        <button class="btn-secondary" id="importSidebarBtn" type="button">+ Importar seleção (.txt)</button>
+        <p class="microhint">Lê o arquivo de seleção de fotos do cliente e monta as lâminas automaticamente, casando os códigos das fotos com os arquivos de origem. Agora também aceita fundos em lote.</p>
+      </div>
+
+      <div class="control-group">
+        <label>Posicionamento</label>
+        <div class="position-grid" id="positionGrid">
+          <button type="button" class="position-card active" data-layout="1" aria-pressed="true">
+            <span class="position-preview p1"><i></i></span>
+            <span class="position-label">1 foto</span>
+          </button>
+          <button type="button" class="position-card" data-layout="2h" aria-pressed="false">
+            <span class="position-preview p2"><i></i><i></i></span>
+            <span class="position-label">2 lado a lado</span>
+          </button>
+          <button type="button" class="position-card" data-layout="2v" aria-pressed="false">
+            <span class="position-preview p2-stack"><i></i><i></i></span>
+            <span class="position-label">2 empilhadas</span>
+          </button>
+          <button type="button" class="position-card" data-layout="2f" aria-pressed="false">
+            <span class="position-preview p2-feature"><i></i><i></i></span>
+            <span class="position-label">2 destaque</span>
+          </button>
+          <button type="button" class="position-card" data-layout="4" aria-pressed="false">
+            <span class="position-preview p4"><i></i><i></i><i></i><i></i></span>
+            <span class="position-label">4 fotos</span>
+          </button>
+          <button type="button" class="position-card" data-layout="6" aria-pressed="false">
+            <span class="position-preview p6"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="position-label">6 fotos</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label>Borda</label>
+        <label class="checkbox-label"><input type="checkbox" id="laminaBorderToggle"> Aplicar borda</label>
+        <div class="segmented" id="borderColorToggle">
+          <button data-border-color="preto" class="active" type="button">Preto</button>
+          <button data-border-color="branco" type="button">Branco</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label class="checkbox-label"><input type="checkbox" id="laminaGuidesToggle" checked> Mostrar guias</label>
+      </div>
+
+      <div class="control-group">
+        <button class="btn-export" id="laminaExportBtn" disabled>⬇ Baixar páginas desta lâmina</button>
+        <button class="btn-preview" id="laminaPreviewBtn" disabled>👁️ Visualizar página</button>
+        <button class="btn-secondary" id="exportAllBtn" type="button" disabled>⬇ Baixar todas as lâminas</button>
+        <p class="hint" id="laminaHint">2 × 276 × 200 mm · acabamento 21 mm</p>
+        <p class="microhint">Cada página é salva em um JPG separado (esquerda/direita), como pede o gabarito. O navegador pode pedir permissão para baixar vários arquivos de uma vez.</p>
+      </div>
+    </aside>
+
+    <!-- CANVAS -->
+    <section class="canvas-area">
+      <div class="canvas-frame">
+        <div class="canvas-wrapper" id="canvasWrapper">
+          <canvas id="editCanvas" aria-label="Área de edição da lâmina"></canvas>
+
+          <div class="guides capa-guides" id="capaGuidesEl">
+            <div class="bleed-strip" id="capaStripTop"></div>
+            <div class="bleed-strip" id="capaStripBottom"></div>
+            <div class="bleed-strip" id="capaStripLeft"></div>
+            <div class="bleed-strip" id="capaStripRight"></div>
+            <div class="safe-frame" id="capaSafeFrame"></div>
+          </div>
+
+          <div class="guides lamina-guides" id="laminaGuidesEl" style="display:none">
+            <div class="gutter-zone" id="laminaGutterZone"></div>
+            <div class="margin-frame" id="laminaMarginFrame"></div>
+            <div class="page-split"></div>
+          </div>
+
+          <div class="crop-mark tl"></div>
+          <div class="crop-mark tr"></div>
+          <div class="crop-mark bl"></div>
+          <div class="crop-mark br"></div>
+
+          <div class="empty-state" id="emptyState">
+            <span class="icon">📷</span>
+            <p>Clique para enviar uma foto</p>
+          </div>
+
+          <div class="ruler-h" id="rulerH"></div>
+          <div class="ruler-v" id="rulerV"></div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span class="legend-item"><i class="dot rose"></i> sangria / acabamento do miolo — evite conteúdo importante</span>
+        <span class="legend-item"><i class="dot teal-line"></i> margem de segurança</span>
+      </div>
+    </section>
+  </main>
+
+  <details class="settings-panel" open>
+    <summary>Configurações avançadas (medidas em mm)</summary>
+    <div class="settings-body">
+      <div class="settings-section">
+        <h4>Tipo de fotolivro</h4>
+        <div class="settings-selector">
+          <label for="fotolivroType">Selecione o modelo:</label>
+          <select id="fotolivroType">
+            <option value="tradicional">Tradicional 22×31</option>
+            <option value="premium">Premium 21×30 (20 págs)</option>
+            <option value="superpremium">Super Premium 21×30 (20 págs)</option>
+          </select>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h4>Capa</h4>
+        <div class="settings-grid">
+          <label>Largura total <input type="number" id="set_capaW" step="0.5" min="1"></label>
+          <label>Altura total <input type="number" id="set_capaH" step="0.5" min="1"></label>
+          <label>Sangria <input type="number" id="set_capaBleed" step="0.5" min="0"></label>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h4>Lâminas (por página)</h4>
+        <div class="settings-grid">
+          <label>Largura da página <input type="number" id="set_pageW" step="0.5" min="1"></label>
+          <label>Altura da página <input type="number" id="set_pageH" step="0.5" min="1"></label>
+          <label>Margem segurança esquerda <input type="number" id="set_marginL" step="0.5" min="0"></label>
+          <label>Margem segurança direita <input type="number" id="set_marginR" step="0.5" min="0"></label>
+          <label>Margem segurança superior <input type="number" id="set_marginT" step="0.5" min="0"></label>
+          <label>Margem segurança inferior <input type="number" id="set_marginB" step="0.5" min="0"></label>
+          <label>Acabamento do miolo (gutter) <input type="number" id="set_gutter" step="0.5" min="0"></label>
+        </div>
+      </div>
+      <button class="btn-ghost" id="resetSettingsBtn" type="button" style="margin-top:14px">Restaurar padrão do gabarito (Tradicional)</button>
+    </div>
+  </details>
+
+  <footer class="app-footer">
+    <p>Ferramenta local — as fotos não saem do seu navegador. Medidas baseadas nos gabaritos Nicephotos. Depois de exportar, envie os JPGs pelo upload normal de foto da sua conta Nicephotos e aplique um layout de foto inteira em cada página.</p>
+  </footer>
+</div>
+
+<!-- MODAL DE VISUALIZAÇÃO EM TELA CHEIA -->
+<div class="preview-modal-overlay" id="previewModal">
+  <button class="preview-close" id="previewModalClose" aria-label="Fechar visualização">✕</button>
+  <img id="previewImage" alt="Visualização da página">
+</div>
+
+<!-- MODAL POSICIONAMENTO (completo) -->
+<div class="modal-overlay" id="positionModalOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="positionModalTitle">
+    <div class="modal-header">
+      <h3 id="positionModalTitle">Enviar fotos</h3>
+      <button type="button" class="modal-close" id="positionModalClose" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="control-group">
+        <label>Página</label>
+        <div class="segmented" id="positionSideToggle">
+          <button type="button" data-side="left" class="active">Página esquerda</button>
+          <button type="button" data-side="right">Página direita</button>
+        </div>
+      </div>
+      <p class="hint modal-hint" style="margin-top:14px">Clique ou arraste uma foto em cada quadro. As molduras ficam dentro da margem de segurança da página selecionada acima.</p>
+      <div class="modal-photo-grid" id="positionModalGrid"></div>
+      <p class="microhint" style="margin-top:10px">Marque <strong>"Não ocupar o quadro todo"</strong> abaixo de uma foto para ela aparecer inteira, sem cortar — o fundo da página (enviado logo abaixo) aparece ao redor dela. Depois arraste a foto ou use a roda do mouse sobre ela na área de edição para ajustar o tamanho e a posição.</p>
+      <div class="control-group" style="margin-top:16px">
+        <label>Imagem de fundo da página</label>
+        <div class="upload-zone small" id="positionBgUploadZone" tabindex="0" role="button" aria-label="Enviar imagem de fundo desta página">
+          <input type="file" id="positionBgFileInput" accept="image/*" hidden>
+          <span>🖼 Clique ou arraste uma imagem de fundo (opcional)</span>
+          <span class="fname" id="positionBgFname"></span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-ghost" id="positionModalClear">Remover posicionamento desta página</button>
+      <button type="button" class="btn-export" id="positionModalConfirm">Concluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAÇÃO -->
+<div class="modal-overlay" id="importModalOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
+    <div class="modal-header">
+      <h3 id="importModalTitle">Importar seleção de fotos</h3>
+      <button type="button" class="modal-close" id="importModalClose" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="import-steps" id="importSteps">
+        <div class="import-step" data-step="1"><span class="import-step-num">1</span> Arquivo .txt</div>
+        <div class="import-step" data-step="2"><span class="import-step-num">2</span> Fotos de origem</div>
+        <div class="import-step" data-step="3"><span class="import-step-num">3</span> Resumo</div>
+      </div>
+
+      <!-- ETAPA 1 -->
+      <div class="import-step-panel" id="importPanel1">
+        <p class="hint modal-hint">Selecione o arquivo .txt de seleção que o cliente recebeu — com a capa e a lista de páginas escolhidas.</p>
+        <div class="upload-zone" id="importTxtZone" tabindex="0" role="button" aria-label="Selecionar arquivo de seleção .txt">
+          <input type="file" id="importTxtInput" accept=".txt,text/plain" hidden>
+          <span class="icon">📄</span>
+          <span>Clique ou arraste o arquivo .txt</span>
+          <span class="fname" id="importTxtFname"></span>
+        </div>
+      </div>
+
+      <!-- ETAPA 2 -->
+      <div class="import-step-panel" id="importPanel2" style="display:none">
+        <p class="hint modal-hint">Selecione as fotos de origem — vários arquivos de uma vez ou uma pasta inteira.</p>
+        <div class="upload-zone" id="importPhotosZone" tabindex="0" role="button" aria-label="Selecionar fotos de origem">
+          <input type="file" id="importPhotosInput" accept="image/*" multiple hidden>
+          <span class="icon">📷</span>
+          <span>Clique ou arraste as fotos</span>
+          <span class="fname" id="importPhotosFname"></span>
+        </div>
+        <button type="button" class="btn-ghost" id="importFolderBtn" style="margin-top:10px;width:100%">Selecionar uma pasta inteira</button>
+        <input type="file" id="importFolderInput" webkitdirectory directory multiple hidden>
+        <p class="microhint" style="margin-top:10px">O casamento com os códigos de cada página (ex.: <em>_MG_4830</em>) é feito pelo nome do arquivo, ignorando maiúsculas/minúsculas e extensão.</p>
+
+        <!-- NOVA ÁREA: UPLOAD DE FUNDOS EM LOTE -->
+        <div style="margin-top:16px;border-top:1px solid var(--ink-700);padding-top:14px;">
+          <label style="font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-lo);display:block;margin-bottom:8px;">Fundos das páginas (opcional)</label>
+          <p class="microhint" style="margin-bottom:8px;">Selecione várias imagens de fundo (uma para cada página, na ordem em que aparecem). A primeira imagem será o fundo da página 1 (direita da 1ª lâmina), a segunda da página 2 (esquerda da 2ª lâmina) e assim por diante.</p>
+          <div class="upload-zone" id="importBgZone" tabindex="0" role="button" aria-label="Selecionar imagens de fundo">
+            <input type="file" id="importBgInput" accept="image/*" multiple hidden>
+            <span class="icon">🖼</span>
+            <span>Clique ou arraste os fundos</span>
+            <span class="fname" id="importBgFname"></span>
+          </div>
+          <button type="button" class="btn-ghost" id="importBgFolderBtn" style="margin-top:8px;width:100%">Selecionar uma pasta com os fundos</button>
+          <input type="file" id="importBgFolderInput" webkitdirectory directory multiple hidden>
+        </div>
+
+        <!-- GRID DE PROGRESSO -->
+        <div class="import-progress-grid" id="importProgressGrid">
+          <div class="progress-header">
+            <span>Arquivos</span>
+            <span id="progressCounter">0 / 0</span>
+          </div>
+          <div class="progress-items" id="progressItems"></div>
+        </div>
+
+        <!-- Área de status da importação -->
+        <div class="import-status" id="importStatus">
+          <span class="spinner"></span> Importando, aguarde...
+        </div>
+      </div>
+
+      <!-- ETAPA 3 -->
+      <div class="import-step-panel" id="importPanel3" style="display:none">
+        <p class="hint modal-hint">Resumo da importação.</p>
+        <div class="import-summary">
+          <div class="import-summary-row"><span class="label">Cliente</span><span class="value" id="summaryCliente">—</span></div>
+          <div class="import-summary-row"><span class="label">Aniversariante</span><span class="value" id="summaryAniversariante">—</span></div>
+          <div class="import-summary-row"><span class="label">Lâminas criadas</span><span class="value" id="summaryLaminas">—</span></div>
+          <div class="import-summary-row"><span class="label">Fotos posicionadas</span><span class="value" id="summaryFotos">—</span></div>
+          <div class="import-summary-row"><span class="label">Fundos associados</span><span class="value" id="summaryFundos">—</span></div>
+        </div>
+        <div class="import-notfound">
+          <label>Códigos não encontrados</label>
+          <p class="microhint" id="importNotFoundEmpty">A lista de códigos sem foto correspondente aparecerá aqui.</p>
+          <ul class="import-notfound-list" id="importNotFoundList" style="display:none"></ul>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-ghost" id="importBackBtn">Cancelar</button>
+      <button type="button" class="btn-export" id="importPrimaryBtn" disabled>Próximo ›</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var EXPORT_DPI = 300;
+var PREVIEW_SCALE = 3;
+var BORDER_WIDTH_MM = 2;
+
+// ========== PERFIS DE FOTOLIVRO ==========
+var FOTOLIVRO_TYPES = {
+  tradicional: {
+    label: 'Tradicional 22×31',
+    capaW: 340, capaH: 250, capaBleed: 20,
+    pageW: 276, pageH: 200,
+    marginL: 8, marginR: 9, marginT: 4.5, marginB: 3.5,
+    gutter: 21
+  },
+  premium: {
+    label: 'Premium 21×30',
+    capaW: 645.5, capaH: 254, capaBleed: 20,
+    pageW: 300, pageH: 214,
+    marginL: 4.5, marginR: 5.5, marginT: 4.5, marginB: 6,
+    gutter: 9.5
+  },
+  superpremium: {
+    label: 'Super Premium 21×30',
+    capaW: 648.8, capaH: 254, capaBleed: 20,
+    pageW: 300, pageH: 214,
+    marginL: 5.5, marginR: 3, marginT: 6.5, marginB: 6,
+    gutter: 12.8
+  }
+};
+
+var DEFAULT_SETTINGS = FOTOLIVRO_TYPES.tradicional;
+var settings = Object.assign({}, DEFAULT_SETTINGS);
+var currentType = 'tradicional';
+
+function newImgState(){ return {img:null, zoom:1, offX:0, offY:0, name:'', fit:'cover'}; }
+function newPagePosition(){ return {layoutId:null, frames:{}, background:newImgState()}; }
+function newLamina(){
+  return {
+    mode:'single', single:newImgState(), left:newImgState(), right:newImgState(),
+    pagePosition:{left:newPagePosition(), right:newPagePosition()}
+  };
+}
+
+var FRAME_GAP_MM = 2.5;
+
+function gridRects(cols, rows){
+  return function(safe){
+    var totalW = Math.max(0, safe.x1-safe.x0), totalH = Math.max(0, safe.y1-safe.y0);
+    var cellW = (totalW - FRAME_GAP_MM*(cols-1))/cols;
+    var cellH = (totalH - FRAME_GAP_MM*(rows-1))/rows;
+    var rects=[];
+    for(var r=0;r<rows;r++){
+      for(var c=0;c<cols;c++){
+        rects.push({x0:safe.x0+c*(cellW+FRAME_GAP_MM), y0:safe.y0+r*(cellH+FRAME_GAP_MM), w:cellW, h:cellH});
+      }
+    }
+    return rects;
+  };
+}
+
+function stackedRects(safe){
+  var totalW = Math.max(0, safe.x1-safe.x0), totalH = Math.max(0, safe.y1-safe.y0);
+  var w = totalW*0.6, h = totalH*0.6;
+  return [
+    {x0:safe.x1-w, y0:safe.y0,   w:w, h:h},
+    {x0:safe.x0,   y0:safe.y1-h, w:w, h:h}
+  ];
+}
+
+function featureRects(safe){
+  var totalW = Math.max(0, safe.x1-safe.x0), totalH = Math.max(0, safe.y1-safe.y0);
+  var avail = totalH - FRAME_GAP_MM;
+  var hBig = avail*2/3, hSmall = avail*1/3;
+  return [
+    {x0:safe.x0, y0:safe.y0, w:totalW, h:hBig},
+    {x0:safe.x0, y0:safe.y0+hBig+FRAME_GAP_MM, w:totalW, h:hSmall}
+  ];
+}
+
+var POSITION_LAYOUTS = {
+  '1':  {count:1, rects:gridRects(1,1)},
+  '2h': {count:2, rects:gridRects(2,1)},
+  '2v': {count:2, rects:stackedRects},
+  '2f': {count:2, rects:featureRects},
+  '4':  {count:4, rects:gridRects(2,2)},
+  '6':  {count:6, rects:gridRects(3,2)}
+};
+function layoutDef(layoutId){
+  return POSITION_LAYOUTS[layoutId] || POSITION_LAYOUTS['1'];
+}
+
+function pageFullAreaMM(side){
+  return side==='left'
+    ? {x0:0, y0:0, x1:settings.pageW, y1:settings.pageH}
+    : {x0:settings.pageW, y0:0, x1:settings.pageW*2, y1:settings.pageH};
+}
+function pageSafeAreaMM(side){
+  var top = settings.marginT, bottom = settings.pageH-settings.marginB;
+  var gHalf = settings.gutter/2;
+  return side==='left'
+    ? {x0:settings.marginL, y0:top, x1:settings.pageW-gHalf, y1:bottom}
+    : {x0:settings.pageW+gHalf, y0:top, x1:settings.pageW*2-settings.marginR, y1:bottom};
+}
+function frameRectsMM(side, layoutId){
+  var safe = pageSafeAreaMM(side);
+  return layoutDef(layoutId).rects(safe);
+}
+function ensurePageFrames(l, side, layoutId){
+  var pp = l.pagePosition[side];
+  if(!pp.frames[layoutId]){
+    var count = layoutDef(layoutId).count;
+    var arr=[];
+    for(var i=0;i<count;i++) arr.push(newImgState());
+    pp.frames[layoutId]=arr;
+  }
+  return pp.frames[layoutId];
+}
+function pageHasPosition(l, side){
+  var pp = l.pagePosition[side];
+  if(!pp || !pp.layoutId) return false;
+  var frames = pp.frames[pp.layoutId];
+  if(!frames) return false;
+  return frames.some(function(f){ return !!f.img; });
+}
+
+var state = {
+  tab:'capa',
+  capa:newImgState(),
+  laminas:[newLamina()],
+  activeLamina:0,
+  border:{enabled:false, color:'preto'}
+};
+
+function $(id){ return document.getElementById(id); }
+
+var canvas = $('editCanvas');
+var ctx = canvas.getContext('2d');
+
+/* ---------------- drawing ---------------- */
+
+function fittedBaseScale(imgState, w, h){
+  var img = imgState.img;
+  var wRatio = w/img.naturalWidth, hRatio = h/img.naturalHeight;
+  return imgState.fit==='contain' ? Math.min(wRatio, hRatio) : Math.max(wRatio, hRatio);
+}
+
+function clampOffsetForRegion(imgState, w, h){
+  var img = imgState.img;
+  if(!img) return;
+  var baseScale = fittedBaseScale(imgState, w, h);
+  var scale = baseScale*imgState.zoom;
+  var rw = img.naturalWidth*scale, rh = img.naturalHeight*scale;
+  var maxOffXfrac = Math.max(0,(rw-w)/2)/w;
+  var maxOffYfrac = Math.max(0,(rh-h)/2)/h;
+  imgState.offX = Math.max(-maxOffXfrac, Math.min(maxOffXfrac, imgState.offX));
+  imgState.offY = Math.max(-maxOffYfrac, Math.min(maxOffYfrac, imgState.offY));
+}
+
+function drawImageFitted(context, x0,y0,w,h, imgState, pxPerMM, applyBorder){
+  if(!imgState.img) return;
+  var b = (applyBorder && state.border.enabled) ? BORDER_WIDTH_MM*pxPerMM : 0;
+  var ix0=x0+b, iy0=y0+b, iw=Math.max(0,w-2*b), ih=Math.max(0,h-2*b);
+  clampOffsetForRegion(imgState, iw, ih);
+  var img = imgState.img;
+  var baseScale = fittedBaseScale(imgState, iw, ih);
+  var scale = baseScale*imgState.zoom;
+  var rw = img.naturalWidth*scale, rh = img.naturalHeight*scale;
+  var cx = ix0+iw/2+imgState.offX*iw;
+  var cy = iy0+ih/2+imgState.offY*ih;
+  context.save();
+  context.beginPath();
+  context.rect(ix0,iy0,iw,ih);
+  context.clip();
+  context.drawImage(img, cx-rw/2, cy-rh/2, rw, rh);
+  context.restore();
+  if(b>0){
+    context.save();
+    context.strokeStyle = state.border.color==='branco' ? '#ffffff' : '#000000';
+    context.lineWidth = b;
+    context.strokeRect(x0+b/2, y0+b/2, Math.max(0,w-b), Math.max(0,h-b));
+    context.restore();
+  }
+}
+
+function drawPositionPage(context, l, side, scale, showEmptyFrames){
+  var pp = l.pagePosition[side];
+  var layoutId = pp.layoutId;
+  if(!layoutId) return;
+  var full = pageFullAreaMM(side);
+  var fx0=full.x0*scale, fy0=full.y0*scale, fw=(full.x1-full.x0)*scale, fh=(full.y1-full.y0)*scale;
+  context.save();
+  context.beginPath();
+  context.rect(fx0,fy0,fw,fh);
+  context.clip();
+  if(showEmptyFrames){
+    context.fillStyle='#c7c4ba';
+    context.fillRect(fx0,fy0,fw,fh);
+  }
+  if(pp.background.img){
+    drawImageFitted(context, fx0,fy0,fw,fh, pp.background, scale, false);
+  }
+  var rectsMM = frameRectsMM(side, layoutId);
+  var frames = pp.frames[layoutId] || [];
+  rectsMM.forEach(function(r, idx){
+    var fr = frames[idx];
+    var px0=r.x0*scale, py0=r.y0*scale, pw=r.w*scale, ph=r.h*scale;
+    if(fr && fr.img){
+      drawImageFitted(context, px0,py0,pw,ph, fr, scale, true);
+    } else if(showEmptyFrames){
+      context.save();
+      context.strokeStyle='rgba(238,236,230,.4)';
+      context.setLineDash([4,4]);
+      context.lineWidth=1.5;
+      context.strokeRect(px0+1,py0+1,Math.max(0,pw-2),Math.max(0,ph-2));
+      context.restore();
+    }
+  });
+  context.restore();
+}
+
+function currentLamina(){ return state.laminas[state.activeLamina]; }
+
+function render(){
+  if(state.tab==='capa'){
+    canvas.width = Math.round(settings.capaW*PREVIEW_SCALE);
+    canvas.height = Math.round(settings.capaH*PREVIEW_SCALE);
+    ctx.fillStyle='#c7c4ba'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    drawImageFitted(ctx,0,0,canvas.width,canvas.height, state.capa, PREVIEW_SCALE, false);
+  } else {
+    var l = currentLamina();
+    canvas.width = Math.round(settings.pageW*2*PREVIEW_SCALE);
+    canvas.height = Math.round(settings.pageH*PREVIEW_SCALE);
+    ctx.fillStyle='#c7c4ba'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    if(l.mode==='single'){
+      drawImageFitted(ctx,0,0,canvas.width,canvas.height, l.single, PREVIEW_SCALE, true);
+    } else {
+      var half = canvas.width/2;
+      drawImageFitted(ctx,0,0,half,canvas.height, l.left, PREVIEW_SCALE, true);
+      drawImageFitted(ctx,half,0,canvas.width-half,canvas.height, l.right, PREVIEW_SCALE, true);
+    }
+    ['left','right'].forEach(function(side){
+      if(pageHasPosition(l, side)) drawPositionPage(ctx, l, side, PREVIEW_SCALE, true);
+    });
+  }
+  updateEmptyState();
+  updateExportButtons();
+  updateDpiIndicators();
+}
+
+/* ---------------- guide overlay ---------------- */
+
+function updateGuides(){
+  var bx = (settings.capaBleed/settings.capaW*100).toFixed(4)+'%';
+  var by = (settings.capaBleed/settings.capaH*100).toFixed(4)+'%';
+  $('capaStripTop').style.height = by;
+  $('capaStripBottom').style.height = by;
+  $('capaStripLeft').style.width = bx;
+  $('capaStripRight').style.width = bx;
+  var sf = $('capaSafeFrame');
+  sf.style.top=by; sf.style.bottom=by; sf.style.left=bx; sf.style.right=bx;
+
+  var totalW = settings.pageW*2;
+  var mL=(settings.marginL/totalW*100).toFixed(4)+'%';
+  var mR=(settings.marginR/totalW*100).toFixed(4)+'%';
+  var mT=(settings.marginT/settings.pageH*100).toFixed(4)+'%';
+  var mB=(settings.marginB/settings.pageH*100).toFixed(4)+'%';
+  var mf = $('laminaMarginFrame');
+  mf.style.top=mT; mf.style.bottom=mB; mf.style.left=mL; mf.style.right=mR;
+
+  var gHalf = (settings.gutter/2/totalW*100);
+  var gz = $('laminaGutterZone');
+  gz.style.left = (50-gHalf).toFixed(4)+'%';
+  gz.style.width = (gHalf*2).toFixed(4)+'%';
+}
+
+function buildRulers(){
+  var totalWmm = state.tab==='capa' ? settings.capaW : settings.pageW*2;
+  var totalHmm = state.tab==='capa' ? settings.capaH : settings.pageH;
+  fillRuler($('rulerH'), totalWmm, true);
+  fillRuler($('rulerV'), totalHmm, false);
+}
+function fillRuler(container, totalMM, horizontal){
+  container.innerHTML='';
+  var step = 50;
+  if(totalMM>500) step=100; else if(totalMM<230) step=25;
+  for(var mm=0; mm<=totalMM+0.01; mm+=step){
+    var pct = Math.min(100, (mm/totalMM*100));
+    var tick = document.createElement('div');
+    tick.className='ruler-tick';
+    if(horizontal){ tick.style.left=pct+'%'; } else { tick.style.top=pct+'%'; }
+    tick.innerHTML = horizontal ? ('<i></i><b>'+Math.round(mm)+'</b>') : ('<b>'+Math.round(mm)+'</b><i></i>');
+    container.appendChild(tick);
+  }
+}
+
+/* ---------------- DPI quality indicator ---------------- */
+
+function computeEffectiveDPI(imgState, regionWmm, regionHmm){
+  if(!imgState.img) return null;
+  var dpiAtZoom1 = Math.min(imgState.img.naturalWidth/regionWmm, imgState.img.naturalHeight/regionHmm) * 25.4;
+  return dpiAtZoom1/imgState.zoom;
+}
+function paintDpi(el, dpi){
+  if(dpi==null){ el.textContent=''; el.className='dpi-indicator'; el.title=''; return; }
+  var r = Math.round(dpi);
+  var cls='dpi-good', title='Ótima resolução para impressão.';
+  if(dpi<120){ cls='dpi-low'; title='Resolução baixa — a foto pode ficar borrada impressa. Tente diminuir o zoom ou usar uma foto maior.'; }
+  else if(dpi<220){ cls='dpi-ok'; title='Resolução aceitável. O ideal é 250+ DPI.'; }
+  el.innerHTML = '<i class="dpi-dot"></i> ~'+r+' DPI';
+  el.className = 'dpi-indicator '+cls;
+  el.title = title;
+}
+function updateDpiIndicators(){
+  paintDpi($('capaDpiIndicator'), computeEffectiveDPI(state.capa, settings.capaW, settings.capaH));
+}
+
+/* ---------------- empty state / export buttons ---------------- */
+
+function updateEmptyState(){
+  var empty;
+  if(state.tab==='capa'){ empty = !state.capa.img; }
+  else {
+    var l = currentLamina();
+    empty = !laminaHasContent(l);
+  }
+  $('emptyState').style.display = empty ? 'flex' : 'none';
+}
+
+function laminaHasContent(l){
+  if(pageHasPosition(l,'left') || pageHasPosition(l,'right')) return true;
+  return l.mode==='single' ? !!l.single.img : (!!l.left.img || !!l.right.img);
+}
+
+function updateExportButtons(){
+  var hasCapa = !!state.capa.img;
+  $('capaExportBtn').disabled = !hasCapa;
+  $('capaPreviewBtn').disabled = !hasCapa;
+  var l = currentLamina();
+  var hasContent = laminaHasContent(l);
+  $('laminaExportBtn').disabled = !hasContent;
+  $('laminaPreviewBtn').disabled = !hasContent;
+  $('exportAllBtn').disabled = !state.laminas.some(laminaHasContent);
+}
+
+/* ---------------- tabs ---------------- */
+
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+    btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+    state.tab = btn.dataset.tab;
+    $('capaSidebar').style.display = state.tab==='capa' ? '' : 'none';
+    $('laminasSidebar').style.display = state.tab==='laminas' ? '' : 'none';
+    $('capaGuidesEl').style.display = state.tab==='capa' ? '' : 'none';
+    $('laminaGuidesEl').style.display = state.tab==='laminas' ? '' : 'none';
+    syncZoomUI();
+    updateGuides();
+    buildRulers();
+    render();
+    updateHints();
+  });
+});
+
+/* ---------------- lamina list management ---------------- */
+
+function renderLaminaList(){
+  var list = $('laminaList');
+  list.innerHTML='';
+  state.laminas.forEach(function(l,i){
+    var card = document.createElement('div');
+    card.className = 'lamina-card'+(i===state.activeLamina?' active':'');
+    card.tabIndex = 0;
+    card.setAttribute('role','button');
+    var hasImg = laminaHasContent(l);
+    var removeBtn = state.laminas.length>1 ? '<button class="lamina-remove" data-idx="'+i+'" aria-label="Remover lâmina '+(i+1)+'">×</button>' : '';
+    card.innerHTML = '<span>'+(i+1)+'</span><span class="lamina-status">'+(hasImg?'✓':'vazia')+'</span>'+removeBtn;
+    card.addEventListener('click', function(e){
+      if(e.target.classList.contains('lamina-remove')) return;
+      state.activeLamina = i;
+      renderLaminaList();
+      syncZoomUI();
+      updateGuides();
+      buildRulers();
+      render();
+    });
+    list.appendChild(card);
+  });
+  list.querySelectorAll('.lamina-remove').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var idx = parseInt(btn.dataset.idx,10);
+      state.laminas.splice(idx,1);
+      if(state.activeLamina>=state.laminas.length) state.activeLamina = state.laminas.length-1;
+      renderLaminaList();
+      syncZoomUI();
+      updateGuides();
+      buildRulers();
+      render();
+      toast('Lâmina removida');
+    });
+  });
+}
+
+$('addLaminaBtn').addEventListener('click', function(){
+  state.laminas.push(newLamina());
+  state.activeLamina = state.laminas.length-1;
+  renderLaminaList();
+  syncZoomUI();
+  buildRulers();
+  render();
+});
+
+/* ---------------- borda ---------------- */
+
+$('laminaBorderToggle').addEventListener('change', function(e){
+  state.border.enabled = e.target.checked;
+  render();
+});
+document.querySelectorAll('#borderColorToggle button').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    state.border.color = btn.dataset.borderColor;
+    syncBorderColorUI();
+    render();
+  });
+});
+function syncBorderColorUI(){
+  document.querySelectorAll('#borderColorToggle button').forEach(function(b){
+    b.classList.toggle('active', b.dataset.borderColor===state.border.color);
+  });
+}
+
+/* ---------------- posicionamento ---------------- */
+
+var activePositionLayoutId = null;
+var activePositionSide = 'left';
+
+function renderPositionModalGrid(){
+  var frames = ensurePageFrames(currentLamina(), activePositionSide, activePositionLayoutId);
+  var grid = $('positionModalGrid');
+  grid.className = 'modal-photo-grid count-'+layoutDef(activePositionLayoutId).count;
+  grid.innerHTML = '';
+  frames.forEach(function(frame, idx){
+    var wrap = document.createElement('div');
+    wrap.className = 'photo-slot-wrap';
+
+    var cell = document.createElement('div');
+    cell.className = 'modal-photo-slot'+(frame.img?' filled':'')+(frame.fit==='contain'?' fit-contain':'');
+    cell.tabIndex = 0;
+    cell.setAttribute('role','button');
+    cell.setAttribute('aria-label', frame.img ? ('Foto '+(idx+1)+' enviada — clique para trocar') : ('Enviar foto '+(idx+1)));
+    cell.innerHTML = (frame.img
+        ? '<img src="'+frame.img.src+'" alt="">'
+        : '<span class="slot-icon">📷</span><span>Foto '+(idx+1)+'</span>')
+      + '<span class="slot-label">'+(idx+1)+'</span>';
+    var input = document.createElement('input');
+    input.type='file'; input.accept='image/*'; input.hidden=true;
+    cell.appendChild(input);
+    cell.addEventListener('click', function(){ input.click(); });
+    cell.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); input.click(); } });
+    input.addEventListener('change', function(e){
+      if(e.target.files && e.target.files[0]) loadFile(e.target.files[0], function(){ return frame; }, null, renderPositionModalGrid);
+    });
+    cell.addEventListener('dragover', function(e){ e.preventDefault(); cell.classList.add('dragover'); });
+    cell.addEventListener('dragleave', function(){ cell.classList.remove('dragover'); });
+    cell.addEventListener('drop', function(e){
+      e.preventDefault(); cell.classList.remove('dragover');
+      if(e.dataTransfer.files && e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0], function(){ return frame; }, null, renderPositionModalGrid);
+    });
+    wrap.appendChild(cell);
+
+    var fitLabel = document.createElement('label');
+    fitLabel.className = 'checkbox-label fit-toggle';
+    fitLabel.title = 'A foto aparece inteira, sem cortar. O fundo da página enviado abaixo aparece ao redor dela.';
+    var fitInput = document.createElement('input');
+    fitInput.type = 'checkbox';
+    fitInput.checked = frame.fit==='contain';
+    fitInput.addEventListener('change', function(e){
+      frame.fit = e.target.checked ? 'contain' : 'cover';
+      frame.zoom = 1; frame.offX = 0; frame.offY = 0;
+      cell.classList.toggle('fit-contain', frame.fit==='contain');
+      render();
+    });
+    fitLabel.appendChild(fitInput);
+    fitLabel.appendChild(document.createTextNode('Não ocupar o quadro todo'));
+    wrap.appendChild(fitLabel);
+
+    grid.appendChild(wrap);
+  });
+}
+
+function syncPositionSideUI(){
+  document.querySelectorAll('#positionSideToggle button').forEach(function(b){
+    b.classList.toggle('active', b.dataset.side===activePositionSide);
+  });
+  var bg = currentLamina().pagePosition[activePositionSide].background;
+  $('positionBgFname').textContent = bg.name || '';
+}
+
+function openPositionModal(layoutId){
+  activePositionLayoutId = layoutId;
+  currentLamina().pagePosition[activePositionSide].layoutId = layoutId;
+  var count = layoutDef(layoutId).count;
+  $('positionModalTitle').textContent = 'Enviar '+count+(count>1?' fotos':' foto');
+  renderPositionModalGrid();
+  syncPositionSideUI();
+  $('positionModalOverlay').classList.add('open');
+  $('positionModalClose').focus();
+  render();
+}
+
+function closePositionModal(){
+  $('positionModalOverlay').classList.remove('open');
+  render();
+}
+
+document.querySelectorAll('#positionGrid .position-card').forEach(function(card){
+  card.addEventListener('click', function(){
+    document.querySelectorAll('#positionGrid .position-card').forEach(function(c){
+      c.classList.remove('active');
+      c.setAttribute('aria-pressed','false');
+    });
+    card.classList.add('active');
+    card.setAttribute('aria-pressed','true');
+    openPositionModal(card.dataset.layout);
+  });
+});
+
+document.querySelectorAll('#positionSideToggle button').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    activePositionSide = btn.dataset.side;
+    currentLamina().pagePosition[activePositionSide].layoutId = activePositionLayoutId;
+    renderPositionModalGrid();
+    syncPositionSideUI();
+    render();
+  });
+});
+
+$('positionModalClear').addEventListener('click', function(){
+  var pp = currentLamina().pagePosition[activePositionSide];
+  pp.layoutId = null;
+  pp.frames = {};
+  pp.background = newImgState();
+  renderPositionModalGrid();
+  syncPositionSideUI();
+  renderLaminaList();
+  render();
+  toast('Posicionamento removido desta página');
+});
+
+setupUpload('positionBgUploadZone','positionBgFileInput','positionBgFname',
+  function(){ return currentLamina().pagePosition[activePositionSide].background; },
+  function(){ renderLaminaList(); });
+
+$('positionModalClose').addEventListener('click', closePositionModal);
+$('positionModalConfirm').addEventListener('click', closePositionModal);
+$('positionModalOverlay').addEventListener('click', function(e){
+  if(e.target===this) closePositionModal();
+});
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape' && $('positionModalOverlay').classList.contains('open')) closePositionModal();
+});
+
+/* ========== IMPORTAÇÃO DE SELEÇÃO ========== */
+
+var importWizard = {
+  step:1,
+  txtFile:null,
+  txtContent:'',
+  photoFiles:[],
+  bgFiles:[],
+  parsedData:null,
+  notFoundCodes:[]
+};
+
+function resetImportWizard(){
+  importWizard = {
+    step:1,
+    txtFile:null,
+    txtContent:'',
+    photoFiles:[],
+    bgFiles:[],
+    parsedData:null,
+    notFoundCodes:[]
+  };
+  $('importTxtInput').value = '';
+  $('importPhotosInput').value = '';
+  $('importFolderInput').value = '';
+  $('importBgInput').value = '';
+  $('importBgFolderInput').value = '';
+  $('importTxtFname').textContent = '';
+  $('importPhotosFname').textContent = '';
+  $('importBgFname').textContent = '';
+  showImportStep(1);
+  hideImportStatus();
+  var grid = $('importProgressGrid');
+  grid.classList.remove('active');
+  $('progressItems').innerHTML = '';
+  $('progressCounter').textContent = '0 / 0';
+}
+
+function showImportStep(step){
+  importWizard.step = step;
+  [1,2,3].forEach(function(n){
+    $('importPanel'+n).style.display = (n===step) ? '' : 'none';
+  });
+  document.querySelectorAll('#importSteps .import-step').forEach(function(el){
+    var n = parseInt(el.dataset.step,10);
+    el.classList.toggle('active', n===step);
+    el.classList.toggle('done', n<step);
+    if(n===step) el.setAttribute('aria-current','step'); else el.removeAttribute('aria-current');
+  });
+  syncImportFooter();
+}
+
+function syncImportFooter(){
+  var back = $('importBackBtn'), primary = $('importPrimaryBtn');
+  if(importWizard.step===1){
+    back.textContent = 'Cancelar';
+    primary.textContent = 'Próximo ›';
+    primary.disabled = !importWizard.txtFile;
+  } else if(importWizard.step===2){
+    back.textContent = '‹ Voltar';
+    primary.textContent = 'Importar';
+    primary.disabled = importWizard.photoFiles.length===0;
+  } else {
+    back.textContent = 'Nova importação';
+    primary.textContent = 'Concluir';
+    primary.disabled = false;
+  }
+}
+
+function showImportStatus(msg, isError){
+  var el = $('importStatus');
+  el.style.display = 'block';
+  el.className = 'import-status active' + (isError ? ' error' : '');
+  el.innerHTML = (isError ? '❌ ' : '<span class="spinner"></span> ') + msg;
+}
+
+function hideImportStatus(){
+  var el = $('importStatus');
+  el.style.display = 'none';
+  el.className = 'import-status';
+}
+
+function openImportModal(){
+  resetImportWizard();
+  $('importModalOverlay').classList.add('open');
+  $('importModalClose').focus();
+}
+function closeImportModal(){
+  $('importModalOverlay').classList.remove('open');
+  hideImportStatus();
+}
+
+$('importSidebarBtn').addEventListener('click', openImportModal);
+$('importModalClose').addEventListener('click', closeImportModal);
+$('importModalOverlay').addEventListener('click', function(e){ if(e.target===this) closeImportModal(); });
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape' && $('importModalOverlay').classList.contains('open')) closeImportModal();
+});
+
+$('importBackBtn').addEventListener('click', function(){
+  if(importWizard.step===1) closeImportModal();
+  else if(importWizard.step===2) showImportStep(1);
+  else resetImportWizard();
+});
+
+/* ----- FUNÇÃO DE PARSING CORRIGIDA (suporta listas numeradas) ----- */
+function parseImportText(text){
+  var lines = text.split(/\r?\n/);
+  var data = { cliente: '', aniversariante: '', capaCode: '', pages: [] };
+
+  var reCliente = /^Cliente\s*[:]\s*(.*)/i;
+  var reAniv = /^Aniversariante\s*[:]\s*(.*)/i;
+  var reCapa = /^CAPA\s*[:]\s*(.*)/i;
+  var rePagina = /^P[aá]gina\s*(\d+)\s*[:]\s*(.*)/i;
+  var reItem = /^\s*\d+[\.\)]\s*(\S+)/;
+
+  var currentPage = null;
+  var currentCodes = [];
+  var capaPending = false;
+
+  lines.forEach(function(line){
+    line = line.trim();
+    if(!line) return;
+
+    var m = line.match(reCliente);
+    if(m){ data.cliente = m[1].trim(); return; }
+
+    m = line.match(reAniv);
+    if(m){ data.aniversariante = m[1].trim(); return; }
+
+    m = line.match(reCapa);
+    if(m){
+      var capaCode = m[1].trim();
+      if(capaCode){
+        data.capaCode = capaCode;
+        capaPending = false;
+      } else {
+        capaPending = true;
+      }
+      return;
+    }
+    if(capaPending){
+      var tokens = line.split(/\s+/);
+      if(tokens.length > 0){
+        data.capaCode = tokens[0];
+        capaPending = false;
+      }
+      return;
+    }
+
+    m = line.match(rePagina);
+    if(m){
+      if(currentPage !== null && currentCodes.length > 0){
+        data.pages.push({ number: currentPage, codes: currentCodes.slice() });
+      }
+      currentPage = parseInt(m[1], 10);
+      var rest = m[2].trim();
+      currentCodes = [];
+      if(rest){
+        var parts = rest.split(/[,;]\s*|\s+/).filter(function(s){ return s.length > 0; });
+        if(parts.length > 0 && /^\d+[\.\)]/.test(parts[0])){
+          // lista numerada na mesma linha? raro, mas ignora
+        } else {
+          currentCodes = parts;
+        }
+      }
+      return;
+    }
+
+    m = line.match(reItem);
+    if(m && currentPage !== null){
+      currentCodes.push(m[1]);
+      return;
+    }
+  });
+
+  if(currentPage !== null && currentCodes.length > 0){
+    data.pages.push({ number: currentPage, codes: currentCodes.slice() });
+  }
+
+  data.pages.sort(function(a,b){ return a.number - b.number; });
+  return data;
+}
+
+function buildPhotoMap(files){
+  var map = {};
+  files.forEach(function(file){
+    var base = file.name.replace(/\.[^.]+$/, '').toLowerCase();
+    map[base] = file;
+  });
+  return map;
+}
+
+function carregarImagem(file){
+  return new Promise(function(resolve, reject){
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var img = new Image();
+      img.onload = function(){ resolve(img); };
+      img.onerror = function(){ reject(new Error('Falha ao carregar imagem')); };
+      img.src = ev.target.result;
+    };
+    reader.onerror = function(){ reject(new Error('Falha ao ler arquivo')); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function layoutForCount(count){
+  if(count === 1) return '1';
+  if(count === 2) return '2h';
+  if(count === 4) return '4';
+  if(count === 6) return '6';
+  return '1';
+}
+
+/* ----- Função para atualizar o grid de progresso ----- */
+function updateProgressItem(fileName, status) {
+  var container = $('progressItems');
+  var items = container.querySelectorAll('.progress-item');
+  var found = false;
+  for (var i = 0; i < items.length; i++) {
+    var nameEl = items[i].querySelector('.p-name');
+    if (nameEl && nameEl.textContent === fileName) {
+      var statusEl = items[i].querySelector('.p-status');
+      items[i].className = 'progress-item ' + status;
+      if (status === 'loading') {
+        statusEl.className = 'p-status loading';
+        statusEl.textContent = '';
+      } else if (status === 'done') {
+        statusEl.className = 'p-status done';
+        statusEl.textContent = '✓';
+      } else if (status === 'error') {
+        statusEl.className = 'p-status error';
+        statusEl.textContent = '✗';
+      }
+      found = true;
+      break;
+    }
+  }
+  if (!found) {
+    var item = document.createElement('div');
+    item.className = 'progress-item ' + status;
+    var statusSpan = document.createElement('span');
+    statusSpan.className = 'p-status ' + (status === 'loading' ? 'loading' : status);
+    if (status === 'done') statusSpan.textContent = '✓';
+    else if (status === 'error') statusSpan.textContent = '✗';
+    else statusSpan.textContent = '';
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'p-name';
+    nameSpan.textContent = fileName;
+    item.appendChild(statusSpan);
+    item.appendChild(nameSpan);
+    container.appendChild(item);
+  }
+  var total = container.children.length;
+  var done = container.querySelectorAll('.progress-item.done').length;
+  var errors = container.querySelectorAll('.progress-item.error').length;
+  var doneCount = done + errors;
+  $('progressCounter').textContent = doneCount + ' / ' + total;
+}
+
+function showProgressGrid(){
+  var grid = $('importProgressGrid');
+  grid.classList.add('active');
+  $('progressItems').innerHTML = '';
+  $('progressCounter').textContent = '0 / 0';
+}
+
+/* ----- importação principal com grid de progresso (CORRIGIDA: página 1 à direita) ----- */
+
+$('importPrimaryBtn').addEventListener('click', function(){
+  if(importWizard.step === 1){
+    if(importWizard.txtFile) showImportStep(2);
+  } else if(importWizard.step === 2){
+    if(importWizard.photoFiles.length === 0){
+      toast('Selecione pelo menos uma foto.');
+      return;
+    }
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Importando…';
+    showImportStatus('Carregando e processando as fotos e fundos...', false);
+    showProgressGrid();
+
+    executarImportacao().then(function(){
+      hideImportStatus();
+      btn.disabled = false;
+      btn.textContent = 'Importar';
+      showImportStep(3);
+      var dados = importWizard.parsedData;
+      if(dados){
+        $('summaryCliente').textContent = dados.cliente || '—';
+        $('summaryAniversariante').textContent = dados.aniversariante || '—';
+        $('summaryLaminas').textContent = state.laminas.length;
+        var totalFotos = 0;
+        state.laminas.forEach(function(l){
+          ['left','right'].forEach(function(side){
+            var pp = l.pagePosition[side];
+            if(pp && pp.layoutId){
+              var frames = pp.frames[pp.layoutId] || [];
+              frames.forEach(function(f){ if(f.img) totalFotos++; });
+            }
+          });
+        });
+        $('summaryFotos').textContent = totalFotos;
+        var totalBg = 0;
+        state.laminas.forEach(function(l){
+          ['left','right'].forEach(function(side){
+            if(l.pagePosition[side].background.img) totalBg++;
+          });
+        });
+        $('summaryFundos').textContent = totalBg;
+
+        var notFound = importWizard.notFoundCodes || [];
+        var listEl = $('importNotFoundList');
+        var emptyEl = $('importNotFoundEmpty');
+        if(notFound.length > 0){
+          listEl.style.display = '';
+          emptyEl.style.display = 'none';
+          listEl.innerHTML = notFound.map(function(c){ return '<li>'+c+'</li>'; }).join('');
+        } else {
+          listEl.style.display = 'none';
+          emptyEl.style.display = '';
+        }
+      }
+    }).catch(function(err){
+      hideImportStatus();
+      btn.disabled = false;
+      btn.textContent = 'Importar';
+      showImportStatus('Erro: ' + err.message, true);
+      toast('Erro na importação: ' + err.message);
+      showImportStep(2);
+    });
+  } else {
+    closeImportModal();
+  }
+});
+
+async function executarImportacao(){
+  if(!importWizard.txtContent) throw new Error('Nenhum arquivo de seleção carregado.');
+  var dados = parseImportText(importWizard.txtContent);
+  if(dados.pages.length === 0 && !dados.capaCode){
+    throw new Error('Nenhuma página ou capa encontrada no arquivo .txt. Verifique o formato.');
+  }
+  importWizard.parsedData = dados;
+  var photoMap = buildPhotoMap(importWizard.photoFiles);
+  var notFound = [];
+  state.laminas = [];
+  state.capa = newImgState();
+
+  var allFilesToLoad = [];
+  if(dados.capaCode){
+    var capaFileObj = photoMap[dados.capaCode.toLowerCase()];
+    if(capaFileObj) {
+      allFilesToLoad.push({ name: capaFileObj.name, type: 'capa', file: capaFileObj });
+    } else {
+      notFound.push(dados.capaCode);
+    }
+  }
+
+  // NOVA LÓGICA: página 1 → direita, página 2 → esquerda, página 3 → direita, etc.
+  // Montamos um array plano com a ordem correta de páginas (side, pageData)
+  var allPages = [];
+  for(var i = 0; i < dados.pages.length; i++){
+    var side = (i % 2 === 0) ? 'right' : 'left'; // índice 0 (página 1) = right, índice 1 (página 2) = left, ...
+    allPages.push({ side: side, page: dados.pages[i] });
+  }
+
+  // Preenche a lista de arquivos a carregar (para o grid de progresso)
+  allPages.forEach(function(p){
+    p.page.codes.forEach(function(code){
+      var file = photoMap[code.toLowerCase()];
+      if(file){
+        allFilesToLoad.push({ name: file.name, type: 'page', pageIndex: allPages.indexOf(p), code: code, file: file });
+      } else {
+        notFound.push(code);
+      }
+    });
+  });
+
+  var bgFiles = importWizard.bgFiles;
+  bgFiles.forEach(function(f, idx){
+    allFilesToLoad.push({ name: f.name, type: 'bg', index: idx, file: f });
+  });
+
+  showProgressGrid();
+  var progressContainer = $('progressItems');
+  progressContainer.innerHTML = '';
+  allFilesToLoad.forEach(function(item){
+    var div = document.createElement('div');
+    div.className = 'progress-item loading';
+    var statusSpan = document.createElement('span');
+    statusSpan.className = 'p-status loading';
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'p-name';
+    nameSpan.textContent = item.name;
+    div.appendChild(statusSpan);
+    div.appendChild(nameSpan);
+    progressContainer.appendChild(div);
+  });
+  $('progressCounter').textContent = '0 / ' + allFilesToLoad.length;
+
+  function updateProgress(fileName, status) {
+    var items = progressContainer.querySelectorAll('.progress-item');
+    for (var j = 0; j < items.length; j++) {
+      var nameEl = items[j].querySelector('.p-name');
+      if (nameEl && nameEl.textContent === fileName) {
+        items[j].className = 'progress-item ' + status;
+        var statusEl = items[j].querySelector('.p-status');
+        if (status === 'done') {
+          statusEl.className = 'p-status done';
+          statusEl.textContent = '✓';
+        } else if (status === 'error') {
+          statusEl.className = 'p-status error';
+          statusEl.textContent = '✗';
+        } else {
+          statusEl.className = 'p-status loading';
+          statusEl.textContent = '';
+        }
+        break;
+      }
+    }
+    var done = progressContainer.querySelectorAll('.progress-item.done').length;
+    var errors = progressContainer.querySelectorAll('.progress-item.error').length;
+    $('progressCounter').textContent = (done + errors) + ' / ' + allFilesToLoad.length;
+  }
+
+  async function loadWithProgress(fileObj) {
+    try {
+      var img = await carregarImagem(fileObj.file);
+      updateProgress(fileObj.name, 'done');
+      return img;
+    } catch(e) {
+      updateProgress(fileObj.name, 'error');
+      throw e;
+    }
+  }
+
+  // Carrega capa
+  if(dados.capaCode){
+    var capaFile = photoMap[dados.capaCode.toLowerCase()];
+    if(capaFile){
+      try {
+        var imgCapa = await loadWithProgress({ name: capaFile.name, file: capaFile });
+        state.capa.img = imgCapa;
+        state.capa.zoom = 1;
+        state.capa.offX = 0;
+        state.capa.offY = 0;
+        state.capa.name = capaFile.name;
+        $('capaFname').textContent = capaFile.name;
+        $('capaExportBtn').disabled = false;
+        $('capaPreviewBtn').disabled = false;
+      } catch(e) {
+        notFound.push(dados.capaCode);
+      }
+    }
+  }
+
+  // Cria lâminas agrupando de acordo com a nova ordem
+  var laminas = [];
+  // A primeira lâmina recebe a página 1 na direita, esquerda vazia
+  // Depois cada par (página2 esquerda, página3 direita), etc.
+  var pageIdx = 0;
+  if (allPages.length > 0) {
+    // primeira lâmina: right = allPages[0] (página 1)
+    var firstLamina = newLamina();
+    firstLamina.pagePosition.right.layoutId = layoutForCount(allPages[0].page.codes.length);
+    var framesR = ensurePageFrames(firstLamina, 'right', firstLamina.pagePosition.right.layoutId);
+    for (var k = 0; k < Math.min(allPages[0].page.codes.length, framesR.length); k++) {
+      var code = allPages[0].page.codes[k].trim();
+      var file = photoMap[code.toLowerCase()];
+      if (file) {
+        try {
+          var img = await loadWithProgress({ name: file.name, file: file });
+          framesR[k].img = img;
+          framesR[k].zoom = 1; framesR[k].offX = 0; framesR[k].offY = 0;
+          framesR[k].fit = 'cover'; framesR[k].name = file.name;
+        } catch(e) { notFound.push(code); }
+      } else { notFound.push(code); }
+    }
+    laminas.push(firstLamina);
+    pageIdx = 1;
+  }
+
+  // Lâminas seguintes: pares (left = página par, right = próxima ímpar)
+  while (pageIdx < allPages.length) {
+    var lamina = newLamina();
+    var leftPage = allPages[pageIdx]; // será sempre 'left'
+    if (leftPage) {
+      lamina.pagePosition.left.layoutId = layoutForCount(leftPage.page.codes.length);
+      var framesL = ensurePageFrames(lamina, 'left', lamina.pagePosition.left.layoutId);
+      for (var m = 0; m < Math.min(leftPage.page.codes.length, framesL.length); m++) {
+        var codeL = leftPage.page.codes[m].trim();
+        var fileL = photoMap[codeL.toLowerCase()];
+        if (fileL) {
+          try {
+            var imgL = await loadWithProgress({ name: fileL.name, file: fileL });
+            framesL[m].img = imgL;
+            framesL[m].zoom = 1; framesL[m].offX = 0; framesL[m].offY = 0;
+            framesL[m].fit = 'cover'; framesL[m].name = fileL.name;
+          } catch(e) { notFound.push(codeL); }
+        } else { notFound.push(codeL); }
+      }
+    }
+    pageIdx++;
+    if (pageIdx < allPages.length) {
+      var rightPage = allPages[pageIdx]; // será 'right'
+      lamina.pagePosition.right.layoutId = layoutForCount(rightPage.page.codes.length);
+      var framesR2 = ensurePageFrames(lamina, 'right', lamina.pagePosition.right.layoutId);
+      for (var n = 0; n < Math.min(rightPage.page.codes.length, framesR2.length); n++) {
+        var codeR = rightPage.page.codes[n].trim();
+        var fileR = photoMap[codeR.toLowerCase()];
+        if (fileR) {
+          try {
+            var imgR = await loadWithProgress({ name: fileR.name, file: fileR });
+            framesR2[n].img = imgR;
+            framesR2[n].zoom = 1; framesR2[n].offX = 0; framesR2[n].offY = 0;
+            framesR2[n].fit = 'cover'; framesR2[n].name = fileR.name;
+          } catch(e) { notFound.push(codeR); }
+        } else { notFound.push(codeR); }
+      }
+      pageIdx++;
+    }
+    laminas.push(lamina);
+  }
+
+  // Associa fundos na mesma ordem das páginas (primeiro fundo → página 1 (direita da 1ª lâmina), segundo → página 2 (esquerda da 2ª lâmina), etc.)
+  if (bgFiles.length > 0) {
+    var bgImages = [];
+    for (var b = 0; b < Math.min(bgFiles.length, allPages.length); b++) {
+      try {
+        var bgImg = await loadWithProgress({ name: bgFiles[b].name, file: bgFiles[b] });
+        bgImages.push(bgImg);
+      } catch(e) {}
+    }
+    // Distribui os fundos percorrendo as páginas na ordem de allPages
+    for (var pi = 0; pi < Math.min(bgImages.length, allPages.length); pi++) {
+      var pageInfo = allPages[pi];
+      // Encontra a lâmina correspondente
+      var laminaIndex = 0;
+      if (pi === 0) {
+        laminaIndex = 0;
+      } else {
+        laminaIndex = Math.floor((pi - 1) / 2) + 1;
+      }
+      if (laminaIndex < laminas.length) {
+        var targetLamina = laminas[laminaIndex];
+        targetLamina.pagePosition[pageInfo.side].background.img = bgImages[pi];
+        targetLamina.pagePosition[pageInfo.side].background.name = bgFiles[pi] ? bgFiles[pi].name : '';
+      }
+    }
+  }
+
+  state.laminas = laminas;
+  if(state.laminas.length === 0) state.laminas.push(newLamina());
+
+  state.activeLamina = 0;
+  importWizard.notFoundCodes = notFound;
+
+  renderLaminaList();
+  syncZoomUI();
+  updateGuides();
+  buildRulers();
+  render();
+  updateExportButtons();
+
+  if(notFound.length > 0){
+    toast(notFound.length + ' código(s) não encontrado(s) — veja a lista no resumo.');
+  } else {
+    toast('Importação concluída! ' + state.laminas.length + ' lâmina(s) criada(s).' +
+          (bgFiles.length > 0 ? ' ' + Math.min(bgFiles.length, allPages.length) + ' fundo(s) associado(s).' : ''));
+  }
+}
+
+/* etapa 1 — lê o .txt */
+(function setupImportTxtZone(){
+  var zone = $('importTxtZone'), input = $('importTxtInput'), fname = $('importTxtFname');
+  function pick(file){
+    if(!file) return;
+    importWizard.txtFile = file;
+    fname.textContent = file.name;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      importWizard.txtContent = e.target.result;
+      syncImportFooter();
+    };
+    reader.onerror = function(){
+      toast('Erro ao ler o arquivo .txt');
+    };
+    reader.readAsText(file);
+  }
+  zone.addEventListener('click', function(){ input.click(); });
+  zone.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); input.click(); } });
+  input.addEventListener('change', function(e){ if(e.target.files && e.target.files[0]) pick(e.target.files[0]); });
+  zone.addEventListener('dragover', function(e){ e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', function(){ zone.classList.remove('dragover'); });
+  zone.addEventListener('drop', function(e){
+    e.preventDefault(); zone.classList.remove('dragover');
+    if(e.dataTransfer.files && e.dataTransfer.files[0]) pick(e.dataTransfer.files[0]);
+  });
+})();
+
+/* etapa 2 — acumula fotos */
+function addImportPhotoFiles(fileList){
+  Array.prototype.forEach.call(fileList, function(f){
+    if(f.type.match(/^image\//)) importWizard.photoFiles.push(f);
+  });
+  $('importPhotosFname').textContent = importWizard.photoFiles.length
+    ? (importWizard.photoFiles.length+' foto(s) selecionada(s)')
+    : '';
+  syncImportFooter();
+}
+(function setupImportPhotosZone(){
+  var zone = $('importPhotosZone'), input = $('importPhotosInput');
+  zone.addEventListener('click', function(){ input.click(); });
+  zone.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); input.click(); } });
+  input.addEventListener('change', function(e){ if(e.target.files) addImportPhotoFiles(e.target.files); });
+  zone.addEventListener('dragover', function(e){ e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', function(){ zone.classList.remove('dragover'); });
+  zone.addEventListener('drop', function(e){
+    e.preventDefault(); zone.classList.remove('dragover');
+    if(e.dataTransfer.files) addImportPhotoFiles(e.dataTransfer.files);
+  });
+})();
+$('importFolderBtn').addEventListener('click', function(){ $('importFolderInput').click(); });
+$('importFolderInput').addEventListener('change', function(e){
+  if(e.target.files) addImportPhotoFiles(e.target.files);
+});
+
+/* etapa 2 — acumula fundos */
+function addImportBgFiles(fileList){
+  Array.prototype.forEach.call(fileList, function(f){
+    if(f.type.match(/^image\//)) importWizard.bgFiles.push(f);
+  });
+  $('importBgFname').textContent = importWizard.bgFiles.length
+    ? (importWizard.bgFiles.length+' fundo(s) selecionado(s)')
+    : '';
+  syncImportFooter();
+}
+(function setupImportBgZone(){
+  var zone = $('importBgZone'), input = $('importBgInput');
+  zone.addEventListener('click', function(){ input.click(); });
+  zone.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); input.click(); } });
+  input.addEventListener('change', function(e){ if(e.target.files) addImportBgFiles(e.target.files); });
+  zone.addEventListener('dragover', function(e){ e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', function(){ zone.classList.remove('dragover'); });
+  zone.addEventListener('drop', function(e){
+    e.preventDefault(); zone.classList.remove('dragover');
+    if(e.dataTransfer.files) addImportBgFiles(e.dataTransfer.files);
+  });
+})();
+$('importBgFolderBtn').addEventListener('click', function(){ $('importBgFolderInput').click(); });
+$('importBgFolderInput').addEventListener('change', function(e){
+  if(e.target.files) addImportBgFiles(e.target.files);
+});
+
+/* ---------------- uploads ---------------- */
+
+function setupUpload(zoneId, inputId, fnameId, getImgState, afterLoad){
+  var zone = $(zoneId), input = $(inputId), fname = fnameId ? $(fnameId) : null;
+  zone.addEventListener('click', function(){ input.click(); });
+  zone.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); input.click(); } });
+  input.addEventListener('change', function(e){
+    if(e.target.files && e.target.files[0]) loadFile(e.target.files[0], getImgState, fname, afterLoad);
+  });
+  zone.addEventListener('dragover', function(e){ e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', function(){ zone.classList.remove('dragover'); });
+  zone.addEventListener('drop', function(e){
+    e.preventDefault(); zone.classList.remove('dragover');
+    if(e.dataTransfer.files && e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0], getImgState, fname, afterLoad);
+  });
+}
+
+function loadFile(file, getImgState, fnameEl, afterLoad){
+  if(!file.type.match(/^image\//)) return;
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    var img = new Image();
+    img.onload = function(){
+      var st = getImgState();
+      st.img = img; st.zoom=1; st.offX=0; st.offY=0; st.name=file.name;
+      if(fnameEl) fnameEl.textContent = file.name;
+      if(afterLoad) afterLoad();
+      render();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+setupUpload('capaUploadZone','capaFileInput','capaFname', function(){ return state.capa; }, function(){ syncZoomUI(); });
+
+$('emptyState').addEventListener('click', function(){
+  if(state.tab==='capa'){ $('capaFileInput').click(); }
+});
+
+/* ---------------- zoom sliders ---------------- */
+
+function syncZoomUI(){
+  $('capaZoomSlider').value = state.capa.zoom;
+  $('capaZoomVal').textContent = Math.round(state.capa.zoom*100)+'%';
+  updateDpiIndicators();
+}
+
+$('capaZoomSlider').addEventListener('input', function(e){
+  state.capa.zoom = parseFloat(e.target.value);
+  $('capaZoomVal').textContent = Math.round(state.capa.zoom*100)+'%';
+  render();
+});
+
+/* ---------------- guides toggle ---------------- */
+
+$('capaGuidesToggle').addEventListener('change', function(e){
+  $('capaGuidesEl').style.visibility = e.target.checked ? 'visible' : 'hidden';
+});
+$('laminaGuidesToggle').addEventListener('change', function(e){
+  $('laminaGuidesEl').style.visibility = e.target.checked ? 'visible' : 'hidden';
+});
+
+/* ---------------- pointer drag + wheel zoom ---------------- */
+
+function getActiveRegion(canvasXpx, canvasYpx){
+  if(state.tab==='capa'){
+    return {x0:0,y0:0,w:canvas.width,h:canvas.height, imgState:state.capa};
+  }
+  var l = currentLamina();
+  var half = canvas.width/2;
+  var side = canvasXpx<half ? 'left' : 'right';
+
+  if(pageHasPosition(l, side)){
+    var pp = l.pagePosition[side];
+    var rectsMM = frameRectsMM(side, pp.layoutId);
+    var frames = ensurePageFrames(l, side, pp.layoutId);
+    for(var i=rectsMM.length-1;i>=0;i--){
+      var r = rectsMM[i];
+      var px0=r.x0*PREVIEW_SCALE, py0=r.y0*PREVIEW_SCALE, pw=r.w*PREVIEW_SCALE, ph=r.h*PREVIEW_SCALE;
+      if(canvasXpx>=px0 && canvasXpx<px0+pw && canvasYpx>=py0 && canvasYpx<py0+ph){
+        return {x0:px0,y0:py0,w:pw,h:ph, imgState:frames[i]};
+      }
+    }
+    var pageX0 = side==='left' ? 0 : half, pageW = side==='left' ? half : canvas.width-half;
+    return {x0:pageX0,y0:0,w:pageW,h:canvas.height, imgState:pp.background};
+  }
+
+  if(l.mode==='single'){
+    return {x0:0,y0:0,w:canvas.width,h:canvas.height, imgState:l.single};
+  }
+  if(side==='left') return {x0:0,y0:0,w:half,h:canvas.height, imgState:l.left};
+  return {x0:half,y0:0,w:canvas.width-half,h:canvas.height, imgState:l.right};
+}
+
+var dragging=false, dragRegion=null, dragStart=null;
+
+canvas.addEventListener('pointerdown', function(e){
+  var rect = canvas.getBoundingClientRect();
+  var scaleX = canvas.width/rect.width, scaleY = canvas.height/rect.height;
+  var cx = (e.clientX-rect.left)*scaleX;
+  var cy = (e.clientY-rect.top)*scaleY;
+  var region = getActiveRegion(cx, cy);
+  if(!region.imgState.img) return;
+  dragging=true;
+  dragRegion=region;
+  dragStart={x:e.clientX,y:e.clientY, offX:region.imgState.offX, offY:region.imgState.offY};
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', function(e){
+  if(!dragging) return;
+  var rect = canvas.getBoundingClientRect();
+  var scaleX = canvas.width/rect.width, scaleY = canvas.height/rect.height;
+  var dx = (e.clientX-dragStart.x)*scaleX;
+  var dy = (e.clientY-dragStart.y)*scaleY;
+  var imgState = dragRegion.imgState;
+  imgState.offX = dragStart.offX + dx/dragRegion.w;
+  imgState.offY = dragStart.offY + dy/dragRegion.h;
+  render();
+});
+function endDrag(){ dragging=false; dragRegion=null; }
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+canvas.addEventListener('pointerleave', function(){ if(!dragging) return; });
+
+canvas.addEventListener('wheel', function(e){
+  var rect = canvas.getBoundingClientRect();
+  var scaleX = canvas.width/rect.width, scaleY = canvas.height/rect.height;
+  var cx = (e.clientX-rect.left)*scaleX;
+  var cy = (e.clientY-rect.top)*scaleY;
+  var region = getActiveRegion(cx, cy);
+  if(!region.imgState.img) return;
+  e.preventDefault();
+  var delta = e.deltaY<0 ? 0.06 : -0.06;
+  var minZoom = region.imgState.fit==='contain' ? 0.3 : 1;
+  region.imgState.zoom = Math.max(minZoom, Math.min(3, region.imgState.zoom+delta));
+  syncZoomUI();
+  render();
+}, {passive:false});
+
+/* ---------------- export ---------------- */
+
+function downloadCanvas(offCanvas, filename){
+  offCanvas.toBlob(function(blob){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href=url; a.download=filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  }, 'image/jpeg', 0.92);
+}
+
+function makeCanvas(wpx, hpx){
+  var c = document.createElement('canvas');
+  c.width=wpx; c.height=hpx;
+  var cctx = c.getContext('2d');
+  cctx.fillStyle='#ffffff'; cctx.fillRect(0,0,wpx,hpx);
+  return c;
+}
+
+function exportCapa(){
+  var scale = EXPORT_DPI/25.4;
+  var w = Math.round(settings.capaW*scale), h = Math.round(settings.capaH*scale);
+  var c = makeCanvas(w,h);
+  drawImageFitted(c.getContext('2d'),0,0,w,h, state.capa, scale, false);
+  downloadCanvas(c,'capa.jpg');
+  toast('capa.jpg baixado');
+}
+
+function buildPageExportCanvas(l, side, scale, spreadCache){
+  var w = Math.round(settings.pageW*scale), h = Math.round(settings.pageH*scale);
+
+  if(pageHasPosition(l, side)){
+    var c = makeCanvas(w,h);
+    var full = pageFullAreaMM(side);
+    var cctx = c.getContext('2d');
+    cctx.translate(-full.x0*scale, 0);
+    drawPositionPage(cctx, l, side, scale, false);
+    return c;
+  }
+  if(l.mode==='single'){
+    if(!spreadCache.canvas){
+      var fullW = Math.round(settings.pageW*2*scale);
+      spreadCache.canvas = makeCanvas(fullW, h);
+      drawImageFitted(spreadCache.canvas.getContext('2d'),0,0,fullW,h, l.single, scale, true);
+    }
+    var srcX = side==='left' ? 0 : (spreadCache.canvas.width-w);
+    var out = makeCanvas(w,h);
+    out.getContext('2d').drawImage(spreadCache.canvas, srcX,0,w,h, 0,0,w,h);
+    return out;
+  }
+  var c2 = makeCanvas(w,h);
+  drawImageFitted(c2.getContext('2d'),0,0,w,h, side==='left'?l.left:l.right, scale, true);
+  return c2;
+}
+
+function exportLamina(idx, silent){
+  var l = state.laminas[idx];
+  var num = String(idx+1).length<2 ? ('0'+(idx+1)) : String(idx+1);
+  var scale = EXPORT_DPI/25.4;
+  var spreadCache = {};
+  downloadCanvas(buildPageExportCanvas(l,'left',scale,spreadCache), 'lamina-'+num+'-esquerda.jpg');
+  downloadCanvas(buildPageExportCanvas(l,'right',scale,spreadCache), 'lamina-'+num+'-direita.jpg');
+  if(!silent) toast('Lâmina '+(idx+1)+' exportada (2 arquivos)');
+}
+
+function exportAllLaminas(){
+  var n = state.laminas.length;
+  state.laminas.forEach(function(l,i){
+    setTimeout(function(){ exportLamina(i, true); }, i*450);
+  });
+  setTimeout(function(){
+    toast(n+(n>1?' lâminas exportadas ':' lâmina exportada ')+'('+(n*2)+' arquivos)');
+  }, n*450+300);
+}
+
+$('capaExportBtn').addEventListener('click', exportCapa);
+$('laminaExportBtn').addEventListener('click', function(){ exportLamina(state.activeLamina); });
+$('exportAllBtn').addEventListener('click', exportAllLaminas);
+
+/* ---------------- PREVIEW EM TELA CHEIA ---------------- */
+
+function getPreviewScale() {
+  var maxW = window.innerWidth * 0.92;
+  var maxH = window.innerHeight * 0.92;
+  var pageW, pageH;
+  if (state.tab === 'capa') {
+    pageW = settings.capaW;
+    pageH = settings.capaH;
+  } else {
+    pageW = settings.pageW * 2;
+    pageH = settings.pageH;
+  }
+  var scaleX = maxW / (pageW * 0.03937);
+  var scaleY = maxH / (pageH * 0.03937);
+  var maxScale = 300 / 25.4;
+  var scale = Math.min(scaleX, scaleY, maxScale);
+  return Math.max(scale, 0.5);
+}
+
+function renderPreviewPage(){
+  var modal = $('previewModal');
+  var img = $('previewImage');
+  var scale = getPreviewScale();
+
+  var offCanvas = document.createElement('canvas');
+  var offCtx = offCanvas.getContext('2d');
+
+  if (state.tab === 'capa') {
+    offCanvas.width = Math.round(settings.capaW * scale);
+    offCanvas.height = Math.round(settings.capaH * scale);
+    offCtx.fillStyle = '#ffffff';
+    offCtx.fillRect(0,0,offCanvas.width,offCanvas.height);
+    drawImageFitted(offCtx,0,0,offCanvas.width,offCanvas.height, state.capa, scale, false);
+  } else {
+    var l = currentLamina();
+    var w = Math.round(settings.pageW * 2 * scale);
+    var h = Math.round(settings.pageH * scale);
+    offCanvas.width = w;
+    offCanvas.height = h;
+    offCtx.fillStyle = '#ffffff';
+    offCtx.fillRect(0,0,w,h);
+
+    if (l.mode === 'single') {
+      drawImageFitted(offCtx,0,0,w,h, l.single, scale, true);
+    } else {
+      var half = w/2;
+      drawImageFitted(offCtx,0,0,half,h, l.left, scale, true);
+      drawImageFitted(offCtx,half,0,w-half,h, l.right, scale, true);
+    }
+    ['left','right'].forEach(function(side){
+      if(pageHasPosition(l, side)) {
+        drawPositionPage(offCtx, l, side, scale, false);
+      }
+    });
+  }
+
+  img.src = offCanvas.toDataURL('image/jpeg', 0.92);
+  modal.classList.add('open');
+}
+
+function previewCapa(){
+  if (!state.capa.img) return;
+  state.tab = 'capa';
+  renderPreviewPage();
+}
+
+function previewLamina(){
+  var l = currentLamina();
+  if (!laminaHasContent(l)) return;
+  state.tab = 'laminas';
+  renderPreviewPage();
+}
+
+$('capaPreviewBtn').addEventListener('click', previewCapa);
+$('laminaPreviewBtn').addEventListener('click', previewLamina);
+
+function closePreview(){
+  $('previewModal').classList.remove('open');
+  $('previewImage').src = '';
+}
+$('previewModalClose').addEventListener('click', closePreview);
+$('previewModal').addEventListener('click', function(e){
+  if (e.target === this) closePreview();
+});
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape' && $('previewModal').classList.contains('open')) closePreview();
+});
+
+/* ---------------- SELETOR DE TIPO DE FOTOLIVRO ---------------- */
+
+function applyFotolivroType(type) {
+  var profile = FOTOLIVRO_TYPES[type];
+  if (!profile) return;
+  currentType = type;
+  settings.capaW = profile.capaW;
+  settings.capaH = profile.capaH;
+  settings.capaBleed = profile.capaBleed;
+  settings.pageW = profile.pageW;
+  settings.pageH = profile.pageH;
+  settings.marginL = profile.marginL;
+  settings.marginR = profile.marginR;
+  settings.marginT = profile.marginT;
+  settings.marginB = profile.marginB;
+  settings.gutter = profile.gutter;
+
+  syncSettingsInputs();
+  updateGuides();
+  buildRulers();
+  render();
+  updateHints();
+  toast('Perfil "' + profile.label + '" aplicado');
+}
+
+function updateHints() {
+  var capaHint = $('capaHint');
+  var laminaHint = $('laminaHint');
+  capaHint.textContent = settings.capaW + ' × ' + settings.capaH + ' mm · sangria ' + settings.capaBleed + ' mm';
+  var spreadW = settings.pageW * 2;
+  laminaHint.textContent = spreadW + ' × ' + settings.pageH + ' mm · acabamento ' + settings.gutter + ' mm';
+}
+
+$('fotolivroType').addEventListener('change', function(e) {
+  applyFotolivroType(e.target.value);
+});
+
+/* ---------------- toast ---------------- */
+
+function toast(msg){
+  var t = document.createElement('div');
+  t.className='toast';
+  t.textContent=msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ t.remove(); }, 300);
+  }, 2300);
+}
+
+/* ---------------- settings panel ---------------- */
+
+var settingsFields = [
+  ['set_capaW','capaW'],['set_capaH','capaH'],['set_capaBleed','capaBleed'],
+  ['set_pageW','pageW'],['set_pageH','pageH'],
+  ['set_marginL','marginL'],['set_marginR','marginR'],['set_marginT','marginT'],['set_marginB','marginB'],
+  ['set_gutter','gutter']
+];
+function syncSettingsInputs(){
+  settingsFields.forEach(function(pair){ $(pair[0]).value = settings[pair[1]]; });
+}
+settingsFields.forEach(function(pair){
+  $(pair[0]).addEventListener('input', function(e){
+    var v = parseFloat(e.target.value);
+    if(!isNaN(v) && v>=0) settings[pair[1]] = v;
+    var select = $('fotolivroType');
+    var matched = false;
+    for (var key in FOTOLIVRO_TYPES) {
+      var p = FOTOLIVRO_TYPES[key];
+      if (p.capaW === settings.capaW && p.capaH === settings.capaH &&
+          p.capaBleed === settings.capaBleed && p.pageW === settings.pageW &&
+          p.pageH === settings.pageH && p.marginL === settings.marginL &&
+          p.marginR === settings.marginR && p.marginT === settings.marginT &&
+          p.marginB === settings.marginB && p.gutter === settings.gutter) {
+        select.value = key;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      // não corresponde a nenhum perfil conhecido, mantém o valor atual
+    }
+    updateGuides();
+    buildRulers();
+    render();
+    updateHints();
+  });
+});
+$('resetSettingsBtn').addEventListener('click', function(){
+  applyFotolivroType('tradicional');
+  $('fotolivroType').value = 'tradicional';
+  toast('Configurações restauradas para Tradicional');
+});
+
+/* ========== EXPORTAR / IMPORTAR PROJETO ========== */
+
+function serializeImgState(imgState) {
+  if (!imgState) return null;
+  var data = {
+    zoom: imgState.zoom || 1,
+    offX: imgState.offX || 0,
+    offY: imgState.offY || 0,
+    name: imgState.name || '',
+    fit: imgState.fit || 'cover',
+    src: null,
+    width: 0,
+    height: 0
+  };
+  if (imgState.img) {
+    var c = document.createElement('canvas');
+    c.width = imgState.img.naturalWidth;
+    c.height = imgState.img.naturalHeight;
+    var ctx2 = c.getContext('2d');
+    ctx2.drawImage(imgState.img, 0, 0);
+    data.src = c.toDataURL('image/jpeg', 0.92);
+    data.width = imgState.img.naturalWidth;
+    data.height = imgState.img.naturalHeight;
+  }
+  return data;
+}
+
+function deserializeImgState(data) {
+  var st = newImgState();
+  if (!data) return st;
+  st.zoom = data.zoom !== undefined ? data.zoom : 1;
+  st.offX = data.offX || 0;
+  st.offY = data.offY || 0;
+  st.name = data.name || '';
+  st.fit = data.fit || 'cover';
+  if (data.src) {
+    var img = new Image();
+    img.src = data.src;
+    st.img = img;
+  }
+  return st;
+}
+
+function exportProject() {
+  var data = {
+    version: 1,
+    settings: settings,
+    currentType: currentType,
+    tab: state.tab,
+    activeLamina: state.activeLamina,
+    border: state.border,
+    capa: serializeImgState(state.capa),
+    laminas: state.laminas.map(function(l) {
+      return {
+        mode: l.mode,
+        single: serializeImgState(l.single),
+        left: serializeImgState(l.left),
+        right: serializeImgState(l.right),
+        pagePosition: {
+          left: {
+            layoutId: l.pagePosition.left.layoutId,
+            frames: (function(){
+              var obj = {};
+              for (var key in l.pagePosition.left.frames) {
+                obj[key] = l.pagePosition.left.frames[key].map(serializeImgState);
+              }
+              return obj;
+            })(),
+            background: serializeImgState(l.pagePosition.left.background)
+          },
+          right: {
+            layoutId: l.pagePosition.right.layoutId,
+            frames: (function(){
+              var obj = {};
+              for (var key in l.pagePosition.right.frames) {
+                obj[key] = l.pagePosition.right.frames[key].map(serializeImgState);
+              }
+              return obj;
+            })(),
+            background: serializeImgState(l.pagePosition.right.background)
+          }
+        }
+      };
+    })
+  };
+
+  var json = JSON.stringify(data, null, 2);
+  var blob = new Blob([json], {type: 'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'fotolivro_projeto.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  toast('Projeto exportado com sucesso!');
+}
+
+function importProject(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      if (!data.version) {
+        toast('Arquivo inválido: versão não encontrada.');
+        return;
+      }
+      if (data.settings) {
+        Object.assign(settings, data.settings);
+        currentType = data.currentType || 'tradicional';
+        $('fotolivroType').value = currentType;
+        syncSettingsInputs();
+      }
+      if (data.border) {
+        state.border = data.border;
+        syncBorderColorUI();
+        $('laminaBorderToggle').checked = state.border.enabled;
+      }
+      state.tab = data.tab || 'capa';
+      state.activeLamina = data.activeLamina || 0;
+
+      state.capa = deserializeImgState(data.capa);
+      if (state.capa.img) {
+        state.capa.img.onload = function() { render(); };
+      }
+
+      state.laminas = data.laminas.map(function(ld) {
+        var l = newLamina();
+        l.mode = ld.mode || 'single';
+        function loadImgState(d) {
+          var st = deserializeImgState(d);
+          if (st.img) {
+            st.img.onload = function() { render(); };
+          }
+          return st;
+        }
+        l.single = loadImgState(ld.single);
+        l.left = loadImgState(ld.left);
+        l.right = loadImgState(ld.right);
+        if (ld.pagePosition) {
+          ['left','right'].forEach(function(side) {
+            var pp = l.pagePosition[side];
+            var dpp = ld.pagePosition[side];
+            if (dpp) {
+              pp.layoutId = dpp.layoutId || null;
+              pp.background = loadImgState(dpp.background);
+              pp.frames = {};
+              if (dpp.frames) {
+                for (var key in dpp.frames) {
+                  pp.frames[key] = dpp.frames[key].map(loadImgState);
+                }
+              }
+            }
+          });
+        }
+        return l;
+      });
+
+      renderLaminaList();
+      syncZoomUI();
+      updateGuides();
+      buildRulers();
+      render();
+      updateHints();
+      updateExportButtons();
+
+      document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.tab === state.tab);
+        btn.setAttribute('aria-selected', btn.dataset.tab === state.tab);
+      });
+      $('capaSidebar').style.display = state.tab === 'capa' ? '' : 'none';
+      $('laminasSidebar').style.display = state.tab === 'laminas' ? '' : 'none';
+      $('capaGuidesEl').style.display = state.tab === 'capa' ? '' : 'none';
+      $('laminaGuidesEl').style.display = state.tab === 'laminas' ? '' : 'none';
+
+      syncBorderColorUI();
+      $('laminaBorderToggle').checked = state.border.enabled;
+
+      setTimeout(render, 300);
+      toast('Projeto importado com sucesso!');
+    } catch(err) {
+      toast('Erro ao importar projeto: ' + err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+}
+
+$('exportProjectBtn').addEventListener('click', exportProject);
+$('importProjectInput').addEventListener('change', function(e) {
+  if (e.target.files && e.target.files[0]) {
+    if (confirm('Isso substituirá o projeto atual. Deseja continuar?')) {
+      importProject(e.target.files[0]);
+    }
+    e.target.value = '';
+  }
+});
+
+/* ---------------- init ---------------- */
+
+syncSettingsInputs();
+renderLaminaList();
+syncBorderColorUI();
+syncZoomUI();
+updateGuides();
+buildRulers();
+render();
+updateHints();
+$('fotolivroType').value = 'tradicional';
+
+window.addEventListener('resize', buildRulers);
+
+})();
+</script>
+</body>
+</html>
