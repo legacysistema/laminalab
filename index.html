@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LaminaLab · Rodrigo Costa Fotografia</title>
+<title>Gerador de Lâminas — Fotolivro · Nicephotos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -931,9 +931,12 @@ function pageSafeAreaMM(side){
     ? {x0:settings.marginL, y0:top, x1:settings.pageW-gHalf, y1:bottom}
     : {x0:settings.pageW+gHalf, y0:top, x1:settings.pageW*2-settings.marginR, y1:bottom};
 }
+var FRAME_MARGIN_GAP_MM = 5; // respiro extra entre a margem de segurança e a área onde as molduras de foto podem ser posicionadas
 function frameRectsMM(side, layoutId){
   var safe = pageSafeAreaMM(side);
-  return layoutDef(layoutId).rects(safe);
+  var g = FRAME_MARGIN_GAP_MM;
+  var inset = {x0:safe.x0+g, y0:safe.y0+g, x1:safe.x1-g, y1:safe.y1-g};
+  return layoutDef(layoutId).rects(inset);
 }
 function ensurePageFrames(l, side, layoutId){
   var pp = l.pagePosition[side];
